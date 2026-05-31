@@ -244,6 +244,60 @@ export default function ResultsClient({ session, answers, paper }: Props) {
         </div>
       </div>
 
+      {/* Section time breakdown */}
+      {paper?.parts && (() => {
+        const byPart: Record<string, { totalMs: number; count: number; correct: number; answered: number }> = {}
+        for (const a of answers) {
+          const part = a.subject_part ?? 'General'
+          if (!byPart[part]) byPart[part] = { totalMs: 0, count: 0, correct: 0, answered: 0 }
+          byPart[part].totalMs += a.time_taken_ms
+          byPart[part].count++
+          if (a.user_answer) {
+            byPart[part].answered++
+            if (a.is_correct) byPart[part].correct++
+          }
+        }
+        const parts = Object.entries(byPart)
+        if (parts.length <= 1) return null
+        return (
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+            <div className="px-5 py-3.5 border-b" style={{ borderColor: 'var(--border)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Time by section</p>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {parts.map(([part, stats]) => {
+                const avgMs = stats.count > 0 ? stats.totalMs / stats.count : 0
+                const pct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
+                return (
+                  <div key={part} className="flex items-center justify-between px-5 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: partColors[part] ? partTextColors[part] : 'var(--muted)' }} />
+                      <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{part}</span>
+                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{stats.count}q</span>
+                    </div>
+                    <div className="flex items-center gap-5 text-right">
+                      <div>
+                        <p className="text-xs font-mono font-semibold" style={{ color: 'var(--text)' }}>{formatMs(stats.totalMs)}</p>
+                        <p className="text-xs" style={{ color: 'var(--muted)' }}>total</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono font-semibold" style={{ color: avgMs > goalMs ? 'var(--red-text)' : 'var(--text)' }}>{formatMs(avgMs)}</p>
+                        <p className="text-xs" style={{ color: 'var(--muted)' }}>avg/q</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold" style={{ color: pct >= 70 ? 'var(--green-text)' : pct >= 50 ? 'var(--yellow-text)' : 'var(--red-text)' }}>{pct}%</p>
+                        <p className="text-xs" style={{ color: 'var(--muted)' }}>correct</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Redo gate — shown until redo is done */}
       {!hasRedone && wrongAnswers.length > 0 && (
         <div className="rounded-2xl p-6 text-center space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
