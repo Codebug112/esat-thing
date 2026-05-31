@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { IconAlert } from '@/components/Icons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -30,64 +31,74 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
-        <div className="mb-10 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
-            Aron's ESAT Thing
-          </h1>
-          <p className="mt-1.5 text-sm" style={{ color: 'var(--muted)' }}>sign in to continue</p>
+
+        {/* Logo mark */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--purple)' }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="3" fill="white"/>
+              <circle cx="9" cy="9" r="7" stroke="white" strokeWidth="1.5" fill="none" opacity="0.4"/>
+            </svg>
+          </div>
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Welcome back</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Sign in to Aron's ESAT Thing</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
-              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text)' }}
-              placeholder="you@example.com"
-            />
-          </div>
+        {/* Card */}
+        <div className="rounded-2xl p-6 space-y-4" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)' }}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm transition-all"
+                style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', color: 'var(--text)' }}
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
-              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text)' }}
-              placeholder="••••••••"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm transition-all"
+                style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', color: 'var(--text)' }}
+                placeholder="••••••••"
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm px-3.5 py-2.5 rounded-xl" style={{ background: 'var(--rose)', color: '#9f1239' }}>
-              {error}
-            </p>
-          )}
+            {error && (
+              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--red-bg)', color: 'var(--red-text)' }}>
+                <IconAlert size={14} />
+                {error}
+              </div>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded-xl text-sm font-medium transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--lavender)', color: '#4c1d95' }}
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: 'var(--purple)', color: 'white' }}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+        </div>
 
-        <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
+        <p className="mt-5 text-center text-sm" style={{ color: 'var(--muted)' }}>
           No account?{' '}
-          <Link href="/signup" className="font-medium" style={{ color: 'var(--text)' }}>
-            Sign up
+          <Link href="/signup" className="font-semibold" style={{ color: 'var(--purple)' }}>
+            Create one
           </Link>
         </p>
       </div>

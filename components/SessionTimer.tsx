@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Paper, getPaperAnswerOptions } from '@/lib/papers-data'
 import { createClient } from '@/lib/supabase/client'
+import { IconFlag, IconArrowLeft, IconArrowRight } from './Icons'
 
 interface Props {
   sessionId: string
   paper: Paper
   goalTimeSec: number
+  selectedParts?: string[]
 }
 
 interface QuestionState {
@@ -27,13 +29,22 @@ function formatMs(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
+export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedParts }: Props) {
   const router = useRouter()
-  const [currentQ, setCurrentQ] = useState(1)
+
+  // Active questions: filtered by selectedParts if paper has parts
+  const activeQuestions: number[] = paper.parts && selectedParts
+    ? Object.entries(paper.parts)
+        .filter(([, part]) => selectedParts.includes(part))
+        .map(([n]) => Number(n))
+        .sort((a, b) => a - b)
+    : Array.from({ length: paper.questionCount }, (_, i) => i + 1)
+
+  const [currentQ, setCurrentQ] = useState(activeQuestions[0] ?? 1)
   const [questions, setQuestions] = useState<Record<number, QuestionState>>(() => {
     const initial: Record<number, QuestionState> = {}
-    for (let i = 1; i <= paper.questionCount; i++) {
-      initial[i] = { answer: null, timeTakenMs: 0, flagged: false, started: false, running: false, startedAt: null }
+    for (const n of activeQuestions) {
+      initial[n] = { answer: null, timeTakenMs: 0, flagged: false, started: false, running: false, startedAt: null }
     }
     return initial
   })
@@ -53,6 +64,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
 
   const getCurrentElapsedMs = useCallback(() => {
     const q = questionsRef.current[currentQRef.current]
+    if (!q) return 0
     if (!q.running || !q.startedAt) return q.timeTakenMs
     return q.timeTakenMs + (Date.now() - q.startedAt)
   }, [])
@@ -66,28 +78,28 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
     return total
   }
 
-  // Timer color: green < goal, yellow ±5s, red > goal+5s
   function getTimerColor(elapsedMs: number, started: boolean): string {
     if (!started) return 'var(--muted)'
     const goalMs = goalTimeSec * 1000
     const diff = elapsedMs - goalMs
-    if (diff < -5000) return '#16a34a'  // green: more than 5s under
-    if (diff < 5000) return '#ca8a04'   // yellow: within ±5s of goal
-    return '#dc2626'                    // red: more than 5s over
+    if (diff < -5000) return '#16a34a'
+    if (diff < 5000) return '#ca8a04'
+    return '#dc2626'
   }
 
   function getTimerBg(elapsedMs: number, started: boolean): string {
     if (!started) return 'var(--bg)'
     const goalMs = goalTimeSec * 1000
     const diff = elapsedMs - goalMs
-    if (diff < -5000) return 'var(--green)'
-    if (diff < 5000) return 'var(--yellow)'
-    return 'var(--rose)'
+    if (diff < -5000) return 'var(--green-bg)'
+    if (diff < 5000) return 'var(--yellow-bg)'
+    return 'var(--red-bg)'
   }
 
   const toggleTimer = useCallback(() => {
     setQuestions(prev => {
       const q = prev[currentQRef.current]
+      if (!q) return prev
       if (q.running) {
         const elapsed = q.startedAt ? q.timeTakenMs + (Date.now() - q.startedAt) : q.timeTakenMs
         return { ...prev, [currentQRef.current]: { ...q, running: false, startedAt: null, timeTakenMs: elapsed, started: true } }
@@ -103,17 +115,23 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
         e.preventDefault()
         toggleTimer()
       }
-      if (e.code === 'ArrowRight' && currentQRef.current < paper.questionCount) goToQuestion(currentQRef.current + 1)
-      if (e.code === 'ArrowLeft' && currentQRef.current > 1) goToQuestion(currentQRef.current - 1)
+      if (e.code === 'ArrowRight') {
+        const idx = activeQuestions.indexOf(currentQRef.current)
+        if (idx < activeQuestions.length - 1) goToQuestion(activeQuestions[idx + 1])
+      }
+      if (e.code === 'ArrowLeft') {
+        const idx = activeQuestions.indexOf(currentQRef.current)
+        if (idx > 0) goToQuestion(activeQuestions[idx - 1])
+      }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [toggleTimer, paper.questionCount])
+  }, [toggleTimer, activeQuestions])
 
   function stopCurrentTimer() {
     setQuestions(prev => {
       const q = prev[currentQRef.current]
-      if (q.running && q.startedAt) {
+      if (q?.running && q.startedAt) {
         const elapsed = q.timeTakenMs + (Date.now() - q.startedAt)
         return { ...prev, [currentQRef.current]: { ...q, running: false, startedAt: null, timeTakenMs: elapsed } }
       }
@@ -137,12 +155,12 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
   async function submitSession() {
     setSubmitting(true)
     stopCurrentTimer()
-    await new Promise(r => setTimeout(r, 50)) // let state settle
+    await new Promise(r => setTimeout(r, 50))
 
     const qs = questionsRef.current
     const supabase = createClient()
-    const answersToInsert = Object.entries(qs).map(([qNum, state]) => {
-      const qn = Number(qNum)
+    const answersToInsert = activeQuestions.map(qn => {
+      const state = qs[qn]
       const correctAnswer = paper.answers[qn]
       const hasAnswer = state.answer !== null && state.answer !== ''
       return {
@@ -167,20 +185,23 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
   const elapsedMs = tick >= 0 ? getCurrentElapsedMs() : 0
   const totalElapsedMs = getTotalElapsedMs()
   const goalMs = goalTimeSec * 1000
-  const answeredCount = Object.values(questions).filter(q => q.answer !== null && q.answer !== '').length
-  const flaggedNums = Object.entries(questions).filter(([, q]) => q.flagged).map(([n]) => Number(n))
+  const answeredCount = activeQuestions.filter(n => {
+    const q = questions[n]
+    return q?.answer !== null && q?.answer !== ''
+  }).length
+  const flaggedNums = activeQuestions.filter(n => questions[n]?.flagged)
   const currentPart = paper.parts?.[currentQ]
+  const currentIdx = activeQuestions.indexOf(currentQ)
 
-  const timerColor = getTimerColor(elapsedMs, currentState.started)
-  const timerBg = getTimerBg(elapsedMs, currentState.started)
+  const timerColor = currentState ? getTimerColor(elapsedMs, currentState.started) : 'var(--muted)'
+  const timerBg = currentState ? getTimerBg(elapsedMs, currentState.started) : 'var(--bg)'
 
-  // Subject part color chips
   const partColors: Record<string, string> = {
-    Mathematics: 'var(--lavender)',
-    Physics: 'var(--blue)',
-    Chemistry: 'var(--green)',
-    Biology: 'var(--peach)',
-    Advanced: 'var(--rose)',
+    Mathematics: 'var(--purple-light)',
+    Physics: 'var(--blue-bg)',
+    Chemistry: 'var(--green-bg)',
+    Biology: 'var(--orange-bg)',
+    Advanced: 'var(--red-bg)',
   }
 
   return (
@@ -192,16 +213,16 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
       {/* Header */}
       <div
         className="px-6 py-4 border-b flex items-center justify-between"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-sm)' }}
         onClick={e => e.stopPropagation()}
       >
         <div>
-          <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{paper.name}</p>
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            {answeredCount}/{paper.questionCount} answered
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{paper.name}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+            {answeredCount}/{activeQuestions.length} answered
             {currentPart && (
               <span
-                className="ml-2 px-2 py-0.5 rounded-md text-xs"
+                className="ml-2 px-2 py-0.5 rounded-md text-xs font-medium"
                 style={{ background: partColors[currentPart] ?? 'var(--bg)', color: 'var(--text)' }}
               >
                 {currentPart}
@@ -212,26 +233,27 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-xs" style={{ color: 'var(--muted)' }}>total</p>
-            <p className="text-sm font-mono font-medium">{formatMs(totalElapsedMs)}</p>
+            <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text)' }}>{formatMs(totalElapsedMs)}</p>
           </div>
           <button
             onClick={() => setShowSubmitConfirm(true)}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-medium"
-            style={{ background: 'var(--text)', color: 'var(--bg)' }}
+            className="px-4 py-2 rounded-xl text-xs font-semibold"
+            style={{ background: 'var(--purple)', color: 'white' }}
           >
             Finish
           </button>
         </div>
       </div>
 
-      {/* Timer display — full screen tap area */}
+      {/* Timer display */}
       <div
         className="flex-1 flex flex-col items-center justify-center cursor-pointer px-6 rounded-2xl mx-4 my-4 transition-all"
         style={{ background: timerBg, minHeight: '35vh' }}
       >
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: timerColor, opacity: 0.7 }}>
-            Question {currentQ} of {paper.questionCount}
+            Question {currentIdx + 1} of {activeQuestions.length}
+            {currentPart && ` · ${currentPart}`}
           </p>
           <div
             className="text-9xl font-light tabular-nums leading-none"
@@ -240,7 +262,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
             {formatMs(elapsedMs)}
           </div>
           <p className="text-sm mt-5 font-medium" style={{ color: timerColor, opacity: 0.8 }}>
-            {!currentState.started
+            {!currentState?.started
               ? 'tap anywhere or press space to start'
               : currentState.running
               ? 'running — tap or space to stop'
@@ -260,7 +282,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
       >
         {/* Answer buttons */}
         <div>
-          <p className="text-xs font-medium mb-2.5 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Your answer</p>
+          <p className="text-xs font-semibold mb-2.5 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Your answer</p>
           <div className="flex gap-2 flex-wrap items-center">
             {answerOptions.map(opt => (
               <button
@@ -268,18 +290,18 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
                 onClick={() => setAnswer(currentQ, opt)}
                 className="w-11 h-11 rounded-xl text-sm font-semibold transition-all"
                 style={{
-                  background: currentState.answer === opt ? 'var(--lavender-dark)' : 'var(--bg)',
-                  color: currentState.answer === opt ? 'white' : 'var(--text)',
-                  border: `1.5px solid ${currentState.answer === opt ? 'var(--lavender-dark)' : 'var(--border)'}`,
+                  background: currentState?.answer === opt ? 'var(--purple)' : 'var(--bg)',
+                  color: currentState?.answer === opt ? 'white' : 'var(--text)',
+                  border: `1.5px solid ${currentState?.answer === opt ? 'var(--purple)' : 'var(--border)'}`,
                 }}
               >
                 {opt}
               </button>
             ))}
-            {currentState.answer && (
+            {currentState?.answer && (
               <button
                 onClick={() => setAnswer(currentQ, '')}
-                className="px-3 h-11 rounded-xl text-xs"
+                className="px-3 h-11 rounded-xl text-xs font-medium"
                 style={{ color: 'var(--muted)', border: '1.5px solid var(--border)' }}
               >
                 Clear
@@ -287,14 +309,15 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
             )}
             <button
               onClick={() => toggleFlag(currentQ)}
-              className="h-11 px-3.5 rounded-xl text-xs font-medium ml-auto transition-all"
+              className="h-11 px-3.5 rounded-xl text-xs font-semibold ml-auto transition-all flex items-center gap-1.5"
               style={{
-                background: currentState.flagged ? 'var(--yellow)' : 'var(--bg)',
-                color: currentState.flagged ? '#854d0e' : 'var(--muted)',
-                border: `1.5px solid ${currentState.flagged ? '#fde047' : 'var(--border)'}`,
+                background: currentState?.flagged ? 'var(--yellow-bg)' : 'var(--bg)',
+                color: currentState?.flagged ? 'var(--yellow-text)' : 'var(--muted)',
+                border: `1.5px solid ${currentState?.flagged ? '#fde047' : 'var(--border)'}`,
               }}
             >
-              {currentState.flagged ? '⚑ Flagged' : '⚑ Flag'}
+              <IconFlag size={12} />
+              {currentState?.flagged ? 'Flagged' : 'Flag'}
             </button>
           </div>
         </div>
@@ -302,51 +325,55 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
         {/* Question grid nav */}
         <div className="flex gap-2 items-center">
           <button
-            onClick={() => goToQuestion(currentQ - 1)}
-            disabled={currentQ === 1}
+            onClick={() => currentIdx > 0 && goToQuestion(activeQuestions[currentIdx - 1])}
+            disabled={currentIdx === 0}
             className="w-9 h-9 rounded-xl text-sm disabled:opacity-20 flex items-center justify-center"
             style={{ border: '1.5px solid var(--border)', color: 'var(--text)' }}
           >
-            ←
+            <IconArrowLeft size={14} />
           </button>
           <div className="flex-1 overflow-x-auto pb-1">
             <div className="flex gap-1.5">
-              {Array.from({ length: paper.questionCount }, (_, i) => i + 1).map(n => {
+              {activeQuestions.map((n, idx) => {
                 const q = questions[n]
                 const isActive = n === currentQ
-                const hasAnswer = q.answer !== null && q.answer !== ''
+                const hasAnswer = q?.answer !== null && q?.answer !== ''
                 return (
                   <button
                     key={n}
                     onClick={() => goToQuestion(n)}
-                    className="flex-shrink-0 w-8 h-8 rounded-lg text-xs font-medium transition-all"
+                    className="flex-shrink-0 w-8 h-8 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: isActive ? 'var(--lavender-dark)' : q.flagged ? 'var(--yellow)' : hasAnswer ? 'var(--green)' : 'var(--bg)',
-                      color: isActive ? 'white' : q.flagged ? '#854d0e' : hasAnswer ? '#14532d' : 'var(--muted)',
-                      border: `1.5px solid ${isActive ? 'var(--lavender-dark)' : 'var(--border)'}`,
+                      background: isActive ? 'var(--purple)' : q?.flagged ? 'var(--yellow-bg)' : hasAnswer ? 'var(--green-bg)' : 'var(--bg)',
+                      color: isActive ? 'white' : q?.flagged ? 'var(--yellow-text)' : hasAnswer ? 'var(--green-text)' : 'var(--muted)',
+                      border: `1.5px solid ${isActive ? 'var(--purple)' : 'var(--border)'}`,
                     }}
                   >
-                    {n}
+                    {idx + 1}
                   </button>
                 )
               })}
             </div>
           </div>
           <button
-            onClick={() => goToQuestion(currentQ + 1)}
-            disabled={currentQ === paper.questionCount}
+            onClick={() => currentIdx < activeQuestions.length - 1 && goToQuestion(activeQuestions[currentIdx + 1])}
+            disabled={currentIdx === activeQuestions.length - 1}
             className="w-9 h-9 rounded-xl text-sm disabled:opacity-20 flex items-center justify-center"
             style={{ border: '1.5px solid var(--border)', color: 'var(--text)' }}
           >
-            →
+            <IconArrowRight size={14} />
           </button>
         </div>
 
         {/* Flagged reminder */}
         {flaggedNums.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--yellow)' }}>
-            <span className="text-xs" style={{ color: '#854d0e' }}>
-              ⚑ Flagged: {flaggedNums.map(n => `Q${n}`).join(', ')} — remember to come back
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'var(--yellow-bg)', border: '1px solid #fde047' }}>
+            <IconFlag size={12} style={{ color: 'var(--yellow-text)', flexShrink: 0 }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--yellow-text)' }}>
+              Flagged: {flaggedNums.map(n => {
+                const idx = activeQuestions.indexOf(n)
+                return `Q${idx + 1}`
+              }).join(', ')} — remember to come back
             </span>
           </div>
         )}
@@ -354,32 +381,32 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
 
       {/* Submit confirm */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.25)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 space-y-5" style={{ background: 'var(--surface)' }}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6 space-y-5" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-md)' }}>
             <div>
               <h2 className="font-semibold text-lg" style={{ color: 'var(--text)' }}>Submit paper?</h2>
               <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-                {answeredCount}/{paper.questionCount} answered · total {formatMs(totalElapsedMs)}
+                {answeredCount}/{activeQuestions.length} answered · total {formatMs(totalElapsedMs)}
               </p>
             </div>
 
-            {/* Unanswered questions */}
             {(() => {
-              const unanswered = Object.entries(questions)
-                .filter(([, q]) => q.answer === null || q.answer === '')
-                .map(([n]) => Number(n))
+              const unanswered = activeQuestions.filter(n => {
+                const q = questions[n]
+                return q?.answer === null || q?.answer === ''
+              })
               if (unanswered.length === 0) return null
               return (
-                <div className="p-3 rounded-xl" style={{ background: 'var(--rose)' }}>
-                  <p className="text-xs font-medium" style={{ color: '#9f1239' }}>
-                    {unanswered.length} unanswered: {unanswered.map(n => `Q${n}`).join(', ')}
+                <div className="p-3.5 rounded-xl" style={{ background: 'var(--red-bg)', border: '1px solid #fca5a5' }}>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--red-text)' }}>
+                    {unanswered.length} unanswered: {unanswered.map(n => `Q${activeQuestions.indexOf(n) + 1}`).join(', ')}
                   </p>
                   <button
                     onClick={() => { setShowSubmitConfirm(false); goToQuestion(unanswered[0]) }}
-                    className="mt-2 text-xs font-medium"
-                    style={{ color: '#9f1239', textDecoration: 'underline' }}
+                    className="mt-2 text-xs font-semibold"
+                    style={{ color: 'var(--red-text)', textDecoration: 'underline' }}
                   >
-                    Go to first unanswered →
+                    Go to first unanswered
                   </button>
                 </div>
               )
@@ -396,8 +423,8 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec }: Props) {
               <button
                 onClick={submitSession}
                 disabled={submitting}
-                className="flex-1 py-3 rounded-xl text-sm font-medium"
-                style={{ background: 'var(--text)', color: 'var(--bg)' }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
+                style={{ background: 'var(--purple)', color: 'white' }}
               >
                 {submitting ? 'Saving…' : 'Submit'}
               </button>

@@ -2,18 +2,37 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f8f7f5;
+  /* Base */
+  --bg: #f4f4f6;
   --surface: #ffffff;
-  --border: #e6e2db;
-  --text: #1c1917;
-  --muted: #78716c;
-  --lavender: #ddd6fe;
-  --lavender-dark: #8b5cf6;
-  --blue: #bfdbfe;
-  --green: #bbf7d0;
-  --peach: #fed7aa;
-  --rose: #fecdd3;
-  --yellow: #fef08a;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text: #111827;
+  --muted: #6b7280;
+  --muted-light: #9ca3af;
+
+  /* Purple accent */
+  --purple: #7c3aed;
+  --purple-dark: #5b21b6;
+  --purple-light: #ede9fe;
+  --purple-mid: #ddd6fe;
+
+  /* Status pastels (data only, not UI chrome) */
+  --green-bg: #dcfce7;
+  --green-text: #15803d;
+  --yellow-bg: #fef9c3;
+  --yellow-text: #a16207;
+  --red-bg: #fee2e2;
+  --red-text: #b91c1c;
+  --blue-bg: #dbeafe;
+  --blue-text: #1d4ed8;
+  --orange-bg: #ffedd5;
+  --orange-text: #c2410c;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
 }
 
 * { box-sizing: border-box; }
@@ -23,10 +42,14 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::selection { background: var(--lavender); }
+::selection { background: var(--purple-mid); }
 
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+/* Input focus ring */
+input:focus { outline: none; border-color: var(--purple) !important; box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }

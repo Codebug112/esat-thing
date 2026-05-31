@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getPaperById } from '@/lib/papers-data'
-import Link from 'next/link'
+import Nav from '@/components/Nav'
 import ResultsClient from '@/components/ResultsClient'
 
 export default async function ResultsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,15 +29,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <nav className="border-b px-6 py-4 flex items-center justify-between" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <Link href="/dashboard" className="font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
-          Aron's ESAT Thing
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/papers" className="text-sm" style={{ color: 'var(--muted)' }}>Papers</Link>
-          <Link href="/history" className="text-sm" style={{ color: 'var(--muted)' }}>History</Link>
-        </div>
-      </nav>
+      <Nav />
       <ResultsClient
         session={session}
         answers={answers ?? []}

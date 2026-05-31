@@ -2,23 +2,23 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { predictESATScore } from '@/lib/papers-data'
 import Link from 'next/link'
-import SignOutButton from '@/components/SignOutButton'
+import Nav from '@/components/Nav'
+import { IconBarChart, IconBook, IconChevronRight, IconTrophy } from '@/components/Icons'
+import DeleteDataButton from '@/components/DeleteDataButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get last 10 completed sessions
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, paper_name, completed_at, started_at')
+    .select('id, paper_name, completed_at')
     .eq('user_id', user.id)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false })
     .limit(10)
 
-  // Get answer stats per session for score prediction
   const sessionIds = sessions?.map(s => s.id) ?? []
   let sessionStats: { percentCorrect: number }[] = []
 
@@ -35,20 +35,15 @@ export default async function DashboardPage() {
         bySession[a.session_id].total++
         if (a.is_correct) bySession[a.session_id].correct++
       }
-      // Sort by session order (most recent = last in array for weighting)
-      sessionStats = (sessions ?? [])
-        .slice()
-        .reverse()
-        .map(s => {
-          const stat = bySession[s.id]
-          return stat ? { percentCorrect: (stat.correct / stat.total) * 100 } : { percentCorrect: 0 }
-        })
+      sessionStats = (sessions ?? []).slice().reverse().map(s => {
+        const stat = bySession[s.id]
+        return stat ? { percentCorrect: (stat.correct / stat.total) * 100 } : { percentCorrect: 0 }
+      })
     }
   }
 
   const predictedScore = predictESATScore(sessionStats)
 
-  // Get mistake breakdown
   const { data: allWrongAnswers } = await supabase
     .from('session_answers')
     .select('wrong_reason')
@@ -58,98 +53,99 @@ export default async function DashboardPage() {
 
   const mistakeCounts: Record<string, number> = {}
   for (const a of allWrongAnswers ?? []) {
-    if (a.wrong_reason) {
-      mistakeCounts[a.wrong_reason] = (mistakeCounts[a.wrong_reason] || 0) + 1
-    }
+    if (a.wrong_reason) mistakeCounts[a.wrong_reason] = (mistakeCounts[a.wrong_reason] || 0) + 1
   }
 
   const reasonLabels: Record<string, string> = {
-    silly: 'Silly / careless',
-    time: 'Ran out of time',
-    concept: "Didn't know concept",
-    misread: 'Misread question',
-    arithmetic: 'Arithmetic error',
-    guess: 'Guessed',
+    silly: 'Silly / careless', time: 'Ran out of time',
+    concept: "Didn't know concept", misread: 'Misread question',
+    arithmetic: 'Arithmetic error', guess: 'Guessed',
   }
+
+  const totalMistakes = Object.values(mistakeCounts).reduce((a, b) => a + b, 0)
+
+  const scoreLabel = predictedScore
+    ? predictedScore >= 7 ? 'Strong — competitive for interview'
+    : predictedScore >= 5 ? 'Good — above average applicant'
+    : predictedScore >= 4 ? 'Average — keep practising'
+    : 'Below average — focus on fundamentals'
+    : null
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* Nav */}
-      <nav className="border-b px-6 py-4 flex items-center justify-between" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <span className="font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Aron's ESAT Thing</span>
-        <div className="flex items-center gap-4">
-          <Link href="/papers" className="text-sm" style={{ color: 'var(--muted)' }}>
-            Papers
-          </Link>
-          <Link href="/history" className="text-sm" style={{ color: 'var(--muted)' }}>
-            History
-          </Link>
-          <SignOutButton />
-        </div>
-      </nav>
+      <Nav active="dashboard" />
 
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
-        {/* Score card */}
-        <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--lavender)' }}>
-          <p className="text-sm font-medium mb-1" style={{ color: '#5b21b6' }}>predicted ESAT score</p>
-          {predictedScore ? (
-            <>
-              <p className="text-7xl font-light tracking-tight" style={{ color: '#3b0764' }}>
-                {predictedScore.toFixed(1)}
-              </p>
-              <p className="text-sm mt-2" style={{ color: '#7c3aed' }}>
-                {predictedScore >= 7 ? 'Strong — competitive for interview' :
-                 predictedScore >= 5 ? 'Good — above average applicant' :
-                 predictedScore >= 4 ? 'Average — keep practising' :
-                 'Below average — focus on fundamentals'}
-              </p>
-            </>
-          ) : (
-            <p className="text-lg mt-2" style={{ color: '#5b21b6' }}>
-              Complete a paper to get your predicted score
-            </p>
-          )}
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
+
+        {/* Hero score card */}
+        <div
+          className="rounded-2xl p-8 flex items-center justify-between overflow-hidden relative"
+          style={{ background: 'var(--purple)', boxShadow: 'var(--shadow-md)' }}
+        >
+          {/* Background decoration */}
+          <div className="absolute right-0 top-0 opacity-10" style={{ transform: 'translate(30%, -30%)' }}>
+            <svg width="200" height="200" viewBox="0 0 200 200" fill="none">
+              <circle cx="100" cy="100" r="80" stroke="white" strokeWidth="2"/>
+              <circle cx="100" cy="100" r="55" stroke="white" strokeWidth="2"/>
+              <circle cx="100" cy="100" r="30" stroke="white" strokeWidth="2"/>
+            </svg>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium mb-1 opacity-70 text-white">Predicted ESAT Score</p>
+            {predictedScore ? (
+              <>
+                <p className="text-6xl font-light text-white tracking-tight">{predictedScore.toFixed(1)}</p>
+                <p className="text-sm mt-2 opacity-80 text-white">{scoreLabel}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-5xl font-light text-white opacity-30">—</p>
+                <p className="text-sm mt-2 text-white opacity-60">Complete a paper to see your score</p>
+              </>
+            )}
+          </div>
+          <div className="opacity-30">
+            <IconTrophy size={64} style={{ color: 'white' }} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {/* Quick stats */}
-          <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>papers completed</p>
-            <p className="text-4xl font-light mt-1">{sessions?.length ?? 0}</p>
-          </div>
-          <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>total mistakes logged</p>
-            <p className="text-4xl font-light mt-1">
-              {Object.values(mistakeCounts).reduce((a, b) => a + b, 0)}
-            </p>
-          </div>
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Papers completed', value: sessions?.length ?? 0, icon: <IconBook size={18} /> },
+            { label: 'Mistakes logged', value: totalMistakes, icon: <IconBarChart size={18} /> },
+            { label: 'Score range', value: '1–9', icon: <IconTrophy size={18} /> },
+          ].map(stat => (
+            <div key={stat.label} className="rounded-2xl p-5" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span style={{ color: 'var(--muted)' }}>{stat.icon}</span>
+              </div>
+              <p className="text-3xl font-semibold" style={{ color: 'var(--text)' }}>{stat.value}</p>
+              <p className="text-xs mt-1 font-medium" style={{ color: 'var(--muted)' }}>{stat.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Mistake breakdown */}
         {Object.keys(mistakeCounts).length > 0 && (
-          <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h2 className="font-medium mb-4" style={{ color: 'var(--text)' }}>Mistake breakdown</h2>
-            <div className="space-y-3">
-              {Object.entries(mistakeCounts)
-                .sort((a, b) => b[1] - a[1])
-                .map(([reason, count]) => {
-                  const total = Object.values(mistakeCounts).reduce((a, b) => a + b, 0)
-                  const pct = Math.round((count / total) * 100)
-                  return (
-                    <div key={reason}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span style={{ color: 'var(--text)' }}>{reasonLabels[reason] ?? reason}</span>
-                        <span style={{ color: 'var(--muted)' }}>{count} ({pct}%)</span>
-                      </div>
-                      <div className="h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
-                        <div
-                          className="h-1.5 rounded-full transition-all"
-                          style={{ width: `${pct}%`, background: 'var(--lavender-dark)' }}
-                        />
-                      </div>
+          <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
+            <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>Mistake breakdown</h2>
+            <div className="space-y-3.5">
+              {Object.entries(mistakeCounts).sort((a, b) => b[1] - a[1]).map(([reason, count]) => {
+                const pct = Math.round((count / totalMistakes) * 100)
+                return (
+                  <div key={reason}>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-medium" style={{ color: 'var(--text)' }}>{reasonLabels[reason] ?? reason}</span>
+                      <span style={{ color: 'var(--muted)' }}>{count} <span className="text-xs">({pct}%)</span></span>
                     </div>
-                  )
-                })}
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                      <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: 'var(--purple)' }} />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -157,28 +153,42 @@ export default async function DashboardPage() {
         {/* CTA */}
         <Link
           href="/papers"
-          className="block w-full text-center py-3.5 rounded-xl font-medium text-sm transition-opacity hover:opacity-80"
-          style={{ background: 'var(--text)', color: 'var(--bg)' }}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+          style={{ background: 'var(--purple)', color: 'white', boxShadow: 'var(--shadow-sm)' }}
         >
+          <IconBook size={15} />
           Start a paper
         </Link>
 
+        {/* Delete data */}
+        {sessions && sessions.length > 0 && (
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>Permanently removes all sessions and answers.</p>
+            <DeleteDataButton userId={user.id} />
+          </div>
+        )}
+
         {/* Recent sessions */}
         {sessions && sessions.length > 0 && (
-          <div>
-            <h2 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Recent sessions</h2>
-            <div className="space-y-2">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Recent sessions</h2>
+              <Link href="/history" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all</Link>
+            </div>
+            <div className="divide-y" style={{ '--tw-divide-opacity': 1 } as React.CSSProperties}>
               {sessions.slice(0, 5).map(s => (
                 <Link
                   key={s.id}
                   href={`/results/${s.id}`}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-colors hover:opacity-80"
-                  style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
+                  className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-gray-50"
                 >
-                  <span className="text-sm font-medium">{s.paper_name}</span>
-                  <span className="text-xs" style={{ color: 'var(--muted)' }}>
-                    {new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{s.paper_name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <IconChevronRight size={14} style={{ color: 'var(--muted)' }} />
+                  </div>
                 </Link>
               ))}
             </div>
