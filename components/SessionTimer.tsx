@@ -180,7 +180,11 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     router.push(`/results/${sessionId}`)
   }
 
-  const answerOptions = getPaperAnswerOptions(paper)
+  // Only show answer options that appear in the active questions
+  const answerOptions = (() => {
+    const used = new Set(activeQuestions.map(n => paper.answers[n]).filter(Boolean))
+    return ['A','B','C','D','E','F','G','H'].filter(o => used.has(o))
+  })()
   const currentState = questions[currentQ]
   const elapsedMs = tick >= 0 ? getCurrentElapsedMs() : 0
   const totalElapsedMs = getTotalElapsedMs()
@@ -252,8 +256,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
       >
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: timerColor, opacity: 0.7 }}>
-            Question {currentIdx + 1} of {activeQuestions.length}
-            {currentPart && ` · ${currentPart}`}
+            Q{currentQ}{currentPart ? ` · ${currentPart}` : ''} &nbsp;·&nbsp; {currentIdx + 1} of {activeQuestions.length}
           </p>
           <div
             className="text-9xl font-light tabular-nums leading-none"
@@ -358,7 +361,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
                       border: `1.5px solid ${isActive ? 'var(--purple)' : 'var(--border)'}`,
                     }}
                   >
-                    {idx + 1}
+                    {n}
                   </button>
                 )
               })}
@@ -379,10 +382,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'var(--yellow-bg)', border: '1px solid #fde047' }}>
             <IconFlag size={12} style={{ color: 'var(--yellow-text)', flexShrink: 0 }} />
             <span className="text-xs font-medium" style={{ color: 'var(--yellow-text)' }}>
-              Flagged: {flaggedNums.map(n => {
-                const idx = activeQuestions.indexOf(n)
-                return `Q${idx + 1}`
-              }).join(', ')} — remember to come back
+              Flagged: {flaggedNums.map(n => `Q${n}`).join(', ')} — remember to come back
             </span>
           </div>
         )}
@@ -408,7 +408,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
               return (
                 <div className="p-3.5 rounded-xl" style={{ background: 'var(--red-bg)', border: '1px solid #fca5a5' }}>
                   <p className="text-xs font-semibold" style={{ color: 'var(--red-text)' }}>
-                    {unanswered.length} unanswered: {unanswered.map(n => `Q${activeQuestions.indexOf(n) + 1}`).join(', ')}
+                    {unanswered.length} unanswered: {unanswered.map(n => `Q${n}`).join(', ')}
                   </p>
                   <button
                     onClick={() => { setShowSubmitConfirm(false); goToQuestion(unanswered[0]) }}
