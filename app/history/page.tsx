@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { WRONG_REASONS } from '@/lib/papers-data'
 import Nav from '@/components/Nav'
+import { IconChevronRight } from '@/components/Icons'
 
 export default async function HistoryPage() {
   const supabase = await createClient()
@@ -116,55 +117,46 @@ export default async function HistoryPage() {
           </div>
         )}
 
-        {/* Session table */}
+        {/* Session list */}
         {sessions && sessions.length > 0 ? (
           <div>
             <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>All sessions</h2>
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: 'var(--bg)' }}>
-                    <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Paper</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Date</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Score</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Total time</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>Avg/Q</th>
-                    <th style={{ borderBottom: '1px solid var(--border)' }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((s, i) => {
-                    const stats = sessionStats[s.id] ?? { correct: 0, total: 0, answered: 0, totalMs: 0 }
-                    const pct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
-                    const avgMs = stats.total > 0 ? stats.totalMs / stats.total : 0
-                    return (
-                      <tr
-                        key={s.id}
-                        style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--bg)', borderBottom: '1px solid var(--border)' }}
-                      >
-                        <td className="px-4 py-3 font-semibold text-sm" style={{ color: 'var(--text)' }}>{s.paper_name}</td>
-                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted)' }}>
+              {sessions.map((s, i) => {
+                const stats = sessionStats[s.id] ?? { correct: 0, total: 0, answered: 0, totalMs: 0 }
+                const pct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
+                const avgMs = stats.total > 0 ? stats.totalMs / stats.total : 0
+                const scoreColor = pct >= 70 ? 'var(--green-text)' : pct >= 50 ? 'var(--yellow-text)' : 'var(--red-text)'
+                const scoreBg = pct >= 70 ? 'var(--green-bg)' : pct >= 50 ? 'var(--yellow-bg)' : 'var(--red-bg)'
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/results/${s.id}`}
+                    className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+                    style={{ borderBottom: i < sessions.length - 1 ? '1px solid var(--border)' : 'none' }}
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Score badge */}
+                      <div className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-center min-w-[4rem]" style={{ background: scoreBg }}>
+                        <p className="text-sm font-bold" style={{ color: scoreColor }}>{pct}%</p>
+                        <p className="text-xs font-medium" style={{ color: scoreColor }}>{stats.correct}/{stats.answered}</p>
+                      </div>
+                      {/* Paper info */}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{s.paper_name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                           {new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold text-sm">
-                          <span style={{ color: pct >= 70 ? 'var(--green-text)' : pct >= 50 ? 'var(--yellow-text)' : 'var(--red-text)' }}>
-                            {stats.correct}/{stats.answered} ({pct}%)
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--muted)' }}>{formatMs(stats.totalMs)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: avgMs > s.goal_time_sec * 1000 ? 'var(--red-text)' : 'var(--muted)' }}>
-                          {formatMs(avgMs)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <Link href={`/results/${s.id}`} className="text-xs font-semibold" style={{ color: 'var(--purple)' }}>
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          <span className="mx-1.5">·</span>
+                          <span className="font-mono">{formatMs(stats.totalMs)}</span> total
+                          <span className="mx-1.5">·</span>
+                          <span className="font-mono" style={{ color: avgMs > s.goal_time_sec * 1000 ? 'var(--red-text)' : 'inherit' }}>{formatMs(avgMs)}</span>/q
+                        </p>
+                      </div>
+                    </div>
+                    <IconChevronRight size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  </Link>
+                )
+              })}
             </div>
           </div>
         ) : (
