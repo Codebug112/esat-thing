@@ -338,14 +338,23 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
                 const q = questions[n]
                 const isActive = n === currentQ
                 const hasAnswer = q?.answer !== null && q?.answer !== ''
+                const diff = q ? q.timeTakenMs - goalMs : 0
+                const timeBg = !hasAnswer ? 'var(--bg)'
+                  : diff < -5000 ? 'var(--green-bg)'
+                  : diff < 5000  ? 'var(--yellow-bg)'
+                  : 'var(--red-bg)'
+                const timeColor = !hasAnswer ? 'var(--muted)'
+                  : diff < -5000 ? 'var(--green-text)'
+                  : diff < 5000  ? 'var(--yellow-text)'
+                  : 'var(--red-text)'
                 return (
                   <button
                     key={n}
                     onClick={() => goToQuestion(n)}
                     className="flex-shrink-0 w-8 h-8 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: isActive ? 'var(--purple)' : q?.flagged ? 'var(--yellow-bg)' : hasAnswer ? 'var(--green-bg)' : 'var(--bg)',
-                      color: isActive ? 'white' : q?.flagged ? 'var(--yellow-text)' : hasAnswer ? 'var(--green-text)' : 'var(--muted)',
+                      background: isActive ? 'var(--purple)' : q?.flagged ? 'var(--yellow-bg)' : timeBg,
+                      color: isActive ? 'white' : q?.flagged ? 'var(--yellow-text)' : timeColor,
                       border: `1.5px solid ${isActive ? 'var(--purple)' : 'var(--border)'}`,
                     }}
                   >
