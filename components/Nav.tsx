@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import SignOutButton from './SignOutButton'
-import { IconBook, IconHistory, IconTarget } from './Icons'
+import { IconBook, IconFlag, IconHistory, IconTarget } from './Icons'
 
 interface NavProps {
-  active?: 'dashboard' | 'papers' | 'history'
+  active?: 'dashboard' | 'papers' | 'history' | 'flagged'
 }
 
 export default function Nav({ active }: NavProps) {
@@ -66,6 +66,17 @@ export default function Nav({ active }: NavProps) {
         >
           <IconHistory size={14} />
           History
+        </Link>
+        <Link
+          href="/flagged"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          style={{
+            color: active === 'flagged' ? 'var(--purple)' : 'var(--muted)',
+            background: active === 'flagged' ? 'var(--purple-light)' : 'transparent',
+          }}
+        >
+          <IconFlag size={14} />
+          Flagged
         </Link>
       </div>
 

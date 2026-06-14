@@ -10,6 +10,7 @@ export interface Paper {
   description: string
   answers: Record<number, string>
   parts?: Record<number, string>
+  pdfUrl?: string
 }
 
 // ─── TMUA Paper 1 ────────────────────────────────────────────────────────────
@@ -206,31 +207,39 @@ function engaaParts(year: number, count: number): Record<number, string> {
   return parts
 }
 
+// PDF URLs — fill in the correct links for each paper
+// (Cambridge Assessment Admissions Testing past papers)
+const NSAA_PDF_URLS: Record<number, string> = {
+  // e.g. 2023: 'https://www.admissionstesting.org/Images/...',
+}
+const ENGAA_PDF_URLS: Record<number, string> = {}
+const TMUA_PDF_URLS: Record<number, string> = {}
+
 export const PAPERS: Paper[] = [
-  { id: 'nsaa-2016', type: 'NSAA', year: 2016, section: 'Section 1', questionCount: 90, name: 'NSAA 2016 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2016_S1, parts: nsaaParts(2016) },
-  { id: 'nsaa-2017', type: 'NSAA', year: 2017, section: 'Section 1', questionCount: 90, name: 'NSAA 2017 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2017_S1, parts: nsaaParts(2017) },
-  { id: 'nsaa-2018', type: 'NSAA', year: 2018, section: 'Section 1', questionCount: 90, name: 'NSAA 2018 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2018_S1, parts: nsaaParts(2018) },
-  { id: 'nsaa-2019', type: 'NSAA', year: 2019, section: 'Section 1', questionCount: 90, name: 'NSAA 2019 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2019_S1, parts: nsaaParts(2019) },
-  { id: 'nsaa-2020', type: 'NSAA', year: 2020, section: 'Section 1', questionCount: 80, name: 'NSAA 2020 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2020_S1, parts: nsaaParts(2020) },
-  { id: 'nsaa-2021', type: 'NSAA', year: 2021, section: 'Section 1', questionCount: 80, name: 'NSAA 2021 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2021_S1, parts: nsaaParts(2021) },
-  { id: 'nsaa-2022', type: 'NSAA', year: 2022, section: 'Section 1', questionCount: 80, name: 'NSAA 2022 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2022_S1, parts: nsaaParts(2022) },
-  { id: 'nsaa-2023', type: 'NSAA', year: 2023, section: 'Section 1', questionCount: 80, name: 'NSAA 2023 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2023_S1, parts: nsaaParts(2023) },
+  { id: 'nsaa-2016', type: 'NSAA', year: 2016, section: 'Section 1', questionCount: 90, name: 'NSAA 2016 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2016_S1, parts: nsaaParts(2016), pdfUrl: NSAA_PDF_URLS[2016] },
+  { id: 'nsaa-2017', type: 'NSAA', year: 2017, section: 'Section 1', questionCount: 90, name: 'NSAA 2017 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2017_S1, parts: nsaaParts(2017), pdfUrl: NSAA_PDF_URLS[2017] },
+  { id: 'nsaa-2018', type: 'NSAA', year: 2018, section: 'Section 1', questionCount: 90, name: 'NSAA 2018 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2018_S1, parts: nsaaParts(2018), pdfUrl: NSAA_PDF_URLS[2018] },
+  { id: 'nsaa-2019', type: 'NSAA', year: 2019, section: 'Section 1', questionCount: 90, name: 'NSAA 2019 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2019_S1, parts: nsaaParts(2019), pdfUrl: NSAA_PDF_URLS[2019] },
+  { id: 'nsaa-2020', type: 'NSAA', year: 2020, section: 'Section 1', questionCount: 80, name: 'NSAA 2020 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2020_S1, parts: nsaaParts(2020), pdfUrl: NSAA_PDF_URLS[2020] },
+  { id: 'nsaa-2021', type: 'NSAA', year: 2021, section: 'Section 1', questionCount: 80, name: 'NSAA 2021 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2021_S1, parts: nsaaParts(2021), pdfUrl: NSAA_PDF_URLS[2021] },
+  { id: 'nsaa-2022', type: 'NSAA', year: 2022, section: 'Section 1', questionCount: 80, name: 'NSAA 2022 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2022_S1, parts: nsaaParts(2022), pdfUrl: NSAA_PDF_URLS[2022] },
+  { id: 'nsaa-2023', type: 'NSAA', year: 2023, section: 'Section 1', questionCount: 80, name: 'NSAA 2023 — Section 1', description: 'Maths · Physics · Chemistry · Biology (80 questions)', answers: NSAA_2023_S1, parts: nsaaParts(2023), pdfUrl: NSAA_PDF_URLS[2023] },
 
-  { id: 'engaa-2016', type: 'ENGAA', year: 2016, section: 'Section 1', questionCount: 54, name: 'ENGAA 2016 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2016_S1, parts: engaaParts(2016, 54) },
-  { id: 'engaa-2017', type: 'ENGAA', year: 2017, section: 'Section 1', questionCount: 54, name: 'ENGAA 2017 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2017_S1, parts: engaaParts(2017, 54) },
-  { id: 'engaa-2018', type: 'ENGAA', year: 2018, section: 'Section 1', questionCount: 54, name: 'ENGAA 2018 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2018_S1, parts: engaaParts(2018, 54) },
-  { id: 'engaa-2019', type: 'ENGAA', year: 2019, section: 'Section 1', questionCount: 40, name: 'ENGAA 2019 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2019_S1, parts: engaaParts(2019, 40) },
-  { id: 'engaa-2020', type: 'ENGAA', year: 2020, section: 'Section 1', questionCount: 40, name: 'ENGAA 2020 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2020_S1, parts: engaaParts(2020, 40) },
-  { id: 'engaa-2021', type: 'ENGAA', year: 2021, section: 'Section 1', questionCount: 40, name: 'ENGAA 2021 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2021_S1, parts: engaaParts(2021, 40) },
-  { id: 'engaa-2022', type: 'ENGAA', year: 2022, section: 'Section 1', questionCount: 40, name: 'ENGAA 2022 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2022_S1, parts: engaaParts(2022, 40) },
-  { id: 'engaa-2023', type: 'ENGAA', year: 2023, section: 'Section 1', questionCount: 40, name: 'ENGAA 2023 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2023_S1, parts: engaaParts(2023, 40) },
+  { id: 'engaa-2016', type: 'ENGAA', year: 2016, section: 'Section 1', questionCount: 54, name: 'ENGAA 2016 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2016_S1, parts: engaaParts(2016, 54), pdfUrl: ENGAA_PDF_URLS[2016] },
+  { id: 'engaa-2017', type: 'ENGAA', year: 2017, section: 'Section 1', questionCount: 54, name: 'ENGAA 2017 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2017_S1, parts: engaaParts(2017, 54), pdfUrl: ENGAA_PDF_URLS[2017] },
+  { id: 'engaa-2018', type: 'ENGAA', year: 2018, section: 'Section 1', questionCount: 54, name: 'ENGAA 2018 — Section 1', description: 'Maths & Physics (54 questions)', answers: ENGAA_2018_S1, parts: engaaParts(2018, 54), pdfUrl: ENGAA_PDF_URLS[2018] },
+  { id: 'engaa-2019', type: 'ENGAA', year: 2019, section: 'Section 1', questionCount: 40, name: 'ENGAA 2019 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2019_S1, parts: engaaParts(2019, 40), pdfUrl: ENGAA_PDF_URLS[2019] },
+  { id: 'engaa-2020', type: 'ENGAA', year: 2020, section: 'Section 1', questionCount: 40, name: 'ENGAA 2020 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2020_S1, parts: engaaParts(2020, 40), pdfUrl: ENGAA_PDF_URLS[2020] },
+  { id: 'engaa-2021', type: 'ENGAA', year: 2021, section: 'Section 1', questionCount: 40, name: 'ENGAA 2021 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2021_S1, parts: engaaParts(2021, 40), pdfUrl: ENGAA_PDF_URLS[2021] },
+  { id: 'engaa-2022', type: 'ENGAA', year: 2022, section: 'Section 1', questionCount: 40, name: 'ENGAA 2022 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2022_S1, parts: engaaParts(2022, 40), pdfUrl: ENGAA_PDF_URLS[2022] },
+  { id: 'engaa-2023', type: 'ENGAA', year: 2023, section: 'Section 1', questionCount: 40, name: 'ENGAA 2023 — Section 1', description: 'Maths & Physics (40 questions)', answers: ENGAA_2023_S1, parts: engaaParts(2023, 40), pdfUrl: ENGAA_PDF_URLS[2023] },
 
-  { id: 'tmua-2017-p1', type: 'TMUA', year: 2017, section: 'Paper 1', questionCount: 20, name: 'TMUA 2017 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2017_P1 },
-  { id: 'tmua-2018-p1', type: 'TMUA', year: 2018, section: 'Paper 1', questionCount: 20, name: 'TMUA 2018 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2018_P1 },
-  { id: 'tmua-2019-p1', type: 'TMUA', year: 2019, section: 'Paper 1', questionCount: 20, name: 'TMUA 2019 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2019_P1 },
-  { id: 'tmua-2020-p1', type: 'TMUA', year: 2020, section: 'Paper 1', questionCount: 20, name: 'TMUA 2020 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2020_P1 },
-  { id: 'tmua-2021-p1', type: 'TMUA', year: 2021, section: 'Paper 1', questionCount: 20, name: 'TMUA 2021 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2021_P1 },
-  { id: 'tmua-2022-p1', type: 'TMUA', year: 2022, section: 'Paper 1', questionCount: 20, name: 'TMUA 2022 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2022_P1 },
+  { id: 'tmua-2017-p1', type: 'TMUA', year: 2017, section: 'Paper 1', questionCount: 20, name: 'TMUA 2017 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2017_P1, pdfUrl: TMUA_PDF_URLS[2017] },
+  { id: 'tmua-2018-p1', type: 'TMUA', year: 2018, section: 'Paper 1', questionCount: 20, name: 'TMUA 2018 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2018_P1, pdfUrl: TMUA_PDF_URLS[2018] },
+  { id: 'tmua-2019-p1', type: 'TMUA', year: 2019, section: 'Paper 1', questionCount: 20, name: 'TMUA 2019 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2019_P1, pdfUrl: TMUA_PDF_URLS[2019] },
+  { id: 'tmua-2020-p1', type: 'TMUA', year: 2020, section: 'Paper 1', questionCount: 20, name: 'TMUA 2020 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2020_P1, pdfUrl: TMUA_PDF_URLS[2020] },
+  { id: 'tmua-2021-p1', type: 'TMUA', year: 2021, section: 'Paper 1', questionCount: 20, name: 'TMUA 2021 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2021_P1, pdfUrl: TMUA_PDF_URLS[2021] },
+  { id: 'tmua-2022-p1', type: 'TMUA', year: 2022, section: 'Paper 1', questionCount: 20, name: 'TMUA 2022 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2022_P1, pdfUrl: TMUA_PDF_URLS[2022] },
 ]
 
 export function getPaperById(id: string): Paper | undefined {

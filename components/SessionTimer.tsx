@@ -11,6 +11,8 @@ interface Props {
   paper: Paper
   goalTimeSec: number
   selectedParts?: string[]
+  draftState: Record<number, QuestionState> | null
+  existingFlags: Set<number>
 }
 
 interface QuestionState {
@@ -29,7 +31,7 @@ function formatMs(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedParts }: Props) {
+export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedParts, draftState, existingFlags }: Props) {
   const router = useRouter()
 
   // Active questions: filtered by selectedParts if paper has parts
@@ -41,21 +43,39 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     : Array.from({ length: paper.questionCount }, (_, i) => i + 1)
 
   const [currentQ, setCurrentQ] = useState(activeQuestions[0] ?? 1)
+
   const [questions, setQuestions] = useState<Record<number, QuestionState>>(() => {
     const initial: Record<number, QuestionState> = {}
     for (const n of activeQuestions) {
-      initial[n] = { answer: null, timeTakenMs: 0, flagged: false, started: false, running: false, startedAt: null }
+      const saved = draftState?.[n]
+      const flagged = existingFlags.has(n)
+      initial[n] = saved
+        ? { ...saved, flagged: saved.flagged || flagged, running: false, startedAt: null }
+        : { answer: null, timeTakenMs: 0, flagged, started: false, running: false, startedAt: null }
     }
     return initial
   })
+
   const [tick, setTick] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const questionsRef = useRef(questions)
   const currentQRef = useRef(currentQ)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { questionsRef.current = questions }, [questions])
   useEffect(() => { currentQRef.current = currentQ }, [currentQ])
+
+  function scheduleSave() {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
+      const supabase = createClient()
+      await supabase
+        .from('sessions')
+        .update({ draft_state: questionsRef.current })
+        .eq('id', sessionId)
+    }, 2000)
+  }
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 100)
@@ -76,6 +96,21 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
       if (q.running && q.startedAt) total += Date.now() - q.startedAt
     }
     return total
+  }
+
+  function getSectionTimes(): Record<string, number> {
+    if (!paper.parts) return {}
+    const sectionMs: Record<string, number> = {}
+    for (const n of activeQuestions) {
+      const part = paper.parts[n]
+      if (!part) continue
+      const q = questionsRef.current[n]
+      if (!q) continue
+      let ms = q.timeTakenMs
+      if (q.running && q.startedAt) ms += Date.now() - q.startedAt
+      sectionMs[part] = (sectionMs[part] ?? 0) + ms
+    }
+    return sectionMs
   }
 
   function getTimerColor(elapsedMs: number, started: boolean): string {
@@ -140,20 +175,60 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
   }
 
   function goToQuestion(n: number) {
-    stopCurrentTimer()
+    const fromPart = paper.parts?.[currentQRef.current]
+    const toPart = paper.parts?.[n]
+    const crossingSection = paper.parts !== undefined && fromPart !== toPart
+
+    setQuestions(prev => {
+      let updated = { ...prev }
+      // Stop current question timer
+      const cq = updated[currentQRef.current]
+      if (cq?.running && cq.startedAt) {
+        const elapsed = cq.timeTakenMs + (Date.now() - cq.startedAt)
+        updated = { ...updated, [currentQRef.current]: { ...cq, running: false, startedAt: null, timeTakenMs: elapsed } }
+      }
+      // Auto-start timer for new question when crossing into a different section
+      if (crossingSection) {
+        const nq = updated[n]
+        if (nq && !nq.running) {
+          updated = { ...updated, [n]: { ...nq, running: true, startedAt: Date.now(), started: true } }
+        }
+      }
+      return updated
+    })
     setCurrentQ(n)
+    scheduleSave()
   }
 
   function setAnswer(qNum: number, ans: string) {
     setQuestions(prev => ({ ...prev, [qNum]: { ...prev[qNum], answer: ans } }))
+    scheduleSave()
   }
 
-  function toggleFlag(qNum: number) {
-    setQuestions(prev => ({ ...prev, [qNum]: { ...prev[qNum], flagged: !prev[qNum].flagged } }))
+  async function toggleFlag(qNum: number) {
+    const nowFlagged = !questionsRef.current[qNum]?.flagged
+    setQuestions(prev => ({ ...prev, [qNum]: { ...prev[qNum], flagged: nowFlagged } }))
+    scheduleSave()
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (nowFlagged) {
+      await supabase.from('flagged_questions').upsert(
+        { user_id: user.id, paper_id: paper.id, question_number: qNum },
+        { onConflict: 'user_id,paper_id,question_number' }
+      )
+    } else {
+      await supabase.from('flagged_questions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('paper_id', paper.id)
+        .eq('question_number', qNum)
+    }
   }
 
   async function submitSession() {
     setSubmitting(true)
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     stopCurrentTimer()
     await new Promise(r => setTimeout(r, 50))
 
@@ -176,7 +251,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     })
 
     await supabase.from('session_answers').insert(answersToInsert)
-    await supabase.from('sessions').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', sessionId)
+    await supabase.from('sessions').update({ status: 'completed', completed_at: new Date().toISOString(), draft_state: null }).eq('id', sessionId)
     router.push(`/results/${sessionId}`)
   }
 
@@ -188,6 +263,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
   const currentState = questions[currentQ]
   const elapsedMs = tick >= 0 ? getCurrentElapsedMs() : 0
   const totalElapsedMs = getTotalElapsedMs()
+  const sectionTimes = getSectionTimes()
   const goalMs = goalTimeSec * 1000
   const answeredCount = activeQuestions.filter(n => {
     const q = questions[n]
@@ -221,7 +297,23 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
         onClick={e => e.stopPropagation()}
       >
         <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{paper.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{paper.name}</p>
+            {paper.pdfUrl && (
+              <a
+                href={paper.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
+                style={{ background: 'var(--purple-light)', color: 'var(--purple)' }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                PDF
+              </a>
+            )}
+          </div>
           <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
             {answeredCount}/{activeQuestions.length} answered
             {currentPart && (
@@ -376,6 +468,22 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
             <IconArrowRight size={14} />
           </button>
         </div>
+
+        {/* Per-section time breakdown */}
+        {Object.keys(sectionTimes).length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(sectionTimes).map(([part, ms]) => (
+              <div
+                key={part}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                style={{ background: partColors[part] ?? 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              >
+                <span style={{ opacity: 0.7 }}>{part}</span>
+                <span className="font-mono font-semibold">{formatMs(ms)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Flagged reminder */}
         {flaggedNums.length > 0 && (

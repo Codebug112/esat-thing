@@ -14,8 +14,6 @@ const CHECKLIST = [
   { id: 'quiet', label: 'I am in a quiet, focused environment' },
 ]
 
-const MANDATORY_PARTS = ['Mathematics']
-
 interface Props {
   paper: Paper
   doneDate: string | null
@@ -30,12 +28,11 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
   const [goalSec, setGoalSec] = useState(75)
   const [loading, setLoading] = useState(false)
 
-  // Compute optional sections (all unique parts except Mathematics)
-  const availableOptionalParts: string[] = paper.parts
-    ? [...new Set(Object.values(paper.parts))].filter(p => !MANDATORY_PARTS.includes(p)).sort()
+  const availableParts: string[] = paper.parts
+    ? [...new Set(Object.values(paper.parts))].sort()
     : []
 
-  const [selectedOptionalParts, setSelectedOptionalParts] = useState<string[]>(availableOptionalParts)
+  const [selectedParts, setSelectedParts] = useState<string[]>(availableParts)
 
   const allChecked = CHECKLIST.every(c => checked[c.id])
   const checkedCount = CHECKLIST.filter(c => checked[c.id]).length
@@ -45,7 +42,7 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
   }
 
   function togglePart(part: string) {
-    setSelectedOptionalParts(prev =>
+    setSelectedParts(prev =>
       prev.includes(part) ? prev.filter(p => p !== part) : [...prev, part]
     )
   }
@@ -58,16 +55,22 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
 
     const { data: session, error } = await supabase
       .from('sessions')
-      .insert({ user_id: user.id, paper_id: paper.id, paper_name: paper.name, goal_time_sec: goalSec, status: 'in_progress' })
+      .insert({
+        user_id: user.id,
+        paper_id: paper.id,
+        paper_name: paper.name,
+        goal_time_sec: goalSec,
+        status: 'in_progress',
+        selected_parts: (paper.parts && availableParts.length > 0) ? selectedParts.join(',') : null,
+      })
       .select('id')
       .single()
 
     if (error || !session) { setLoading(false); return }
 
     let url = `/session/${session.id}`
-    if (paper.parts) {
-      const allSelectedParts = [...MANDATORY_PARTS, ...selectedOptionalParts]
-      url += `?parts=${encodeURIComponent(allSelectedParts.join(','))}`
+    if (paper.parts && availableParts.length > 0) {
+      url += `?parts=${selectedParts.map(encodeURIComponent).join(',')}`
     }
     router.push(url)
   }
@@ -114,6 +117,21 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
               <div>
                 <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>{paper.name}</h2>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{paper.questionCount} questions · {paper.description}</p>
+                {paper.pdfUrl && (
+                  <a
+                    href={paper.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium"
+                    style={{ color: 'var(--purple)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    Open paper PDF
+                  </a>
+                )}
               </div>
               <button onClick={() => setOpen(false)} className="ml-4 p-1 rounded-lg hover:bg-gray-100 flex-shrink-0" style={{ color: 'var(--muted)' }}>
                 <IconX size={16} />
@@ -122,24 +140,21 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
 
             <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
               {/* Section selector */}
-              {availableOptionalParts.length > 0 && (
+              {availableParts.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                       Sections to practice
                     </p>
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {selectedParts.length === availableParts.length
+                        ? 'All selected'
+                        : `${selectedParts.length} of ${availableParts.length}`}
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {/* Mathematics — always on */}
-                    <div
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold"
-                      style={{ background: 'var(--purple-light)', border: '1.5px solid var(--purple)', color: 'var(--purple)' }}
-                    >
-                      <IconCheck size={12} />
-                      Mathematics
-                    </div>
-                    {availableOptionalParts.map(part => {
-                      const selected = selectedOptionalParts.includes(part)
+                    {availableParts.map(part => {
+                      const selected = selectedParts.includes(part)
                       return (
                         <button
                           key={part}
@@ -157,8 +172,8 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
                       )
                     })}
                   </div>
-                  {selectedOptionalParts.length === 0 && (
-                    <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Maths only — other sections deselected.</p>
+                  {selectedParts.length === 0 && (
+                    <p className="text-xs mt-2" style={{ color: '#dc2626' }}>Select at least one section to start.</p>
                   )}
                 </div>
               )}
@@ -250,11 +265,11 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
               </button>
               <button
                 onClick={startSession}
-                disabled={!allChecked || loading}
+                disabled={!allChecked || loading || (availableParts.length > 0 && selectedParts.length === 0)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-40"
                 style={{ background: 'var(--purple)', color: 'white' }}
               >
-                {loading ? 'Starting…' : allChecked ? "Let's go" : `${checkedCount}/${CHECKLIST.length} checked`}
+                {loading ? 'Starting…' : !allChecked ? `${checkedCount}/${CHECKLIST.length} checked` : selectedParts.length === 0 ? 'Select a section' : "Let's go"}
               </button>
             </div>
           </div>

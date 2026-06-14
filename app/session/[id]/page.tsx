@@ -29,7 +29,20 @@ export default async function SessionPage({
   const paper = getPaperById(session.paper_id)
   if (!paper) redirect('/papers')
 
-  const selectedParts = parts ? parts.split(',') : undefined
+  // URL param takes precedence; fall back to what was saved when the session started
+  const selectedParts = parts
+    ? parts.split(',')
+    : session.selected_parts
+    ? session.selected_parts.split(',')
+    : undefined
+
+  const { data: flaggedRows } = await supabase
+    .from('flagged_questions')
+    .select('question_number')
+    .eq('user_id', user.id)
+    .eq('paper_id', session.paper_id)
+
+  const existingFlags = new Set((flaggedRows ?? []).map(r => r.question_number))
 
   return (
     <SessionTimer
@@ -37,6 +50,8 @@ export default async function SessionPage({
       paper={paper}
       goalTimeSec={session.goal_time_sec}
       selectedParts={selectedParts}
+      draftState={session.draft_state ?? null}
+      existingFlags={existingFlags}
     />
   )
 }

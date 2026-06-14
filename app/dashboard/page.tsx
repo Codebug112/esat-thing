@@ -25,19 +25,21 @@ export default async function DashboardPage() {
   if (sessionIds.length > 0) {
     const { data: answers } = await supabase
       .from('session_answers')
-      .select('session_id, is_correct')
+      .select('session_id, is_correct, user_answer')
       .in('session_id', sessionIds)
 
     if (answers) {
-      const bySession: Record<string, { correct: number; total: number }> = {}
+      const bySession: Record<string, { correct: number; answered: number }> = {}
       for (const a of answers) {
-        if (!bySession[a.session_id]) bySession[a.session_id] = { correct: 0, total: 0 }
-        bySession[a.session_id].total++
-        if (a.is_correct) bySession[a.session_id].correct++
+        if (!bySession[a.session_id]) bySession[a.session_id] = { correct: 0, answered: 0 }
+        if (a.user_answer !== null && a.user_answer !== '') {
+          bySession[a.session_id].answered++
+          if (a.is_correct) bySession[a.session_id].correct++
+        }
       }
       sessionStats = (sessions ?? []).slice().reverse().map(s => {
         const stat = bySession[s.id]
-        return stat ? { percentCorrect: (stat.correct / stat.total) * 100 } : { percentCorrect: 0 }
+        return stat && stat.answered > 0 ? { percentCorrect: (stat.correct / stat.answered) * 100 } : { percentCorrect: 0 }
       })
     }
   }

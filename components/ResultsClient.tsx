@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Paper, WRONG_REASONS, getPaperAnswerOptions } from '@/lib/papers-data'
+import { Paper, WRONG_REASONS } from '@/lib/papers-data'
 import { createClient } from '@/lib/supabase/client'
 import { IconFlag, IconRepeat } from './Icons'
 
@@ -58,7 +58,10 @@ export default function ResultsClient({ session, answers, paper }: Props) {
   const [redoRevealed, setRedoRevealed] = useState(false)
   const [inRedo, setInRedo] = useState(false)
 
-  const answerOptions = paper ? getPaperAnswerOptions(paper) : ['A','B','C','D','E']
+  const answerOptions = (() => {
+    const used = new Set(answers.map(a => a.correct_answer).filter(Boolean))
+    return ['A','B','C','D','E','F','G','H'].filter(o => used.has(o))
+  })()
 
   async function saveReason(answerId: string, reason: string) {
     setSaving(prev => ({ ...prev, [answerId]: true }))
