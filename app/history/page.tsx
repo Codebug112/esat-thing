@@ -12,12 +12,14 @@ export default async function HistoryPage() {
 
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, paper_name, completed_at, goal_time_sec')
+    .select('id, paper_name, completed_at, started_at, goal_time_sec, status')
     .eq('user_id', user.id)
-    .eq('status', 'completed')
-    .order('completed_at', { ascending: false })
+    .order('completed_at', { ascending: false, nullsFirst: false })
 
-  const sessionIds = sessions?.map(s => s.id) ?? []
+  const completedSessions = (sessions ?? []).filter(s => s.status === 'completed')
+  const inProgressSessions = (sessions ?? []).filter(s => s.status === 'in_progress')
+
+  const sessionIds = completedSessions.map(s => s.id)
 
   const { data: allAnswers } = await supabase
     .from('session_answers')
@@ -117,12 +119,43 @@ export default async function HistoryPage() {
           </div>
         )}
 
-        {/* Session list */}
-        {sessions && sessions.length > 0 ? (
+        {/* In-progress sessions */}
+        {inProgressSessions.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>All sessions</h2>
+            <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>In progress</h2>
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-              {sessions.map((s, i) => {
+              {inProgressSessions.map((s, i) => (
+                <Link
+                  key={s.id}
+                  href={`/session/${s.id}`}
+                  className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+                  style={{ borderBottom: i < inProgressSessions.length - 1 ? '1px solid var(--border)' : 'none' }}
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-center min-w-[4rem]" style={{ background: 'var(--yellow-bg)' }}>
+                      <p className="text-xs font-bold" style={{ color: 'var(--yellow-text)' }}>saved</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{s.paper_name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+                        Started {new Date(s.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <span className="ml-2 font-medium" style={{ color: 'var(--purple)' }}>· Tap to resume</span>
+                      </p>
+                    </div>
+                  </div>
+                  <IconChevronRight size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Completed session list */}
+        {completedSessions.length > 0 ? (
+          <div>
+            <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Completed</h2>
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+              {completedSessions.map((s, i) => {
                 const stats = sessionStats[s.id] ?? { correct: 0, total: 0, answered: 0, totalMs: 0 }
                 const pct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
                 const avgMs = stats.total > 0 ? stats.totalMs / stats.total : 0
@@ -133,15 +166,13 @@ export default async function HistoryPage() {
                     key={s.id}
                     href={`/results/${s.id}`}
                     className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
-                    style={{ borderBottom: i < sessions.length - 1 ? '1px solid var(--border)' : 'none' }}
+                    style={{ borderBottom: i < completedSessions.length - 1 ? '1px solid var(--border)' : 'none' }}
                   >
                     <div className="flex items-center gap-4 min-w-0">
-                      {/* Score badge */}
                       <div className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-center min-w-[4rem]" style={{ background: scoreBg }}>
                         <p className="text-sm font-bold" style={{ color: scoreColor }}>{pct}%</p>
                         <p className="text-xs font-medium" style={{ color: scoreColor }}>{stats.correct}/{stats.answered}</p>
                       </div>
-                      {/* Paper info */}
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{s.paper_name}</p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>

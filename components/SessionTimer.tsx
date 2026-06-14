@@ -209,21 +209,39 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     const nowFlagged = !questionsRef.current[qNum]?.flagged
     setQuestions(prev => ({ ...prev, [qNum]: { ...prev[qNum], flagged: nowFlagged } }))
     scheduleSave()
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    if (nowFlagged) {
-      await supabase.from('flagged_questions').upsert(
-        { user_id: user.id, paper_id: paper.id, question_number: qNum },
-        { onConflict: 'user_id,paper_id,question_number' }
-      )
-    } else {
-      await supabase.from('flagged_questions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('paper_id', paper.id)
-        .eq('question_number', qNum)
+    try {
+      const supabase = createClient()
+      const { data: { user }, error: authErr } = await supabase.auth.getUser()
+      if (authErr || !user) return
+      if (nowFlagged) {
+        const { error } = await supabase.from('flagged_questions').upsert(
+          { user_id: user.id, paper_id: paper.id, question_number: qNum },
+          { onConflict: 'user_id,paper_id,question_number' }
+        )
+        if (error) console.warn('Flag save error:', error.message)
+      } else {
+        const { error } = await supabase.from('flagged_questions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('paper_id', paper.id)
+          .eq('question_number', qNum)
+        if (error) console.warn('Flag delete error:', error.message)
+      }
+    } catch (e) {
+      console.warn('toggleFlag error:', e)
     }
+  }
+
+  async function saveAndExit() {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    stopCurrentTimer()
+    await new Promise(r => setTimeout(r, 50))
+    const supabase = createClient()
+    await supabase
+      .from('sessions')
+      .update({ draft_state: questionsRef.current })
+      .eq('id', sessionId)
+    router.push('/papers')
   }
 
   async function submitSession() {
@@ -331,6 +349,13 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
             <p className="text-xs" style={{ color: 'var(--muted)' }}>total</p>
             <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text)' }}>{formatMs(totalElapsedMs)}</p>
           </div>
+          <button
+            onClick={saveAndExit}
+            className="px-4 py-2 rounded-xl text-xs font-semibold"
+            style={{ background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)' }}
+          >
+            Save
+          </button>
           <button
             onClick={() => setShowSubmitConfirm(true)}
             className="px-4 py-2 rounded-xl text-xs font-semibold"

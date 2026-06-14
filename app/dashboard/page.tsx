@@ -37,7 +37,7 @@ export default async function DashboardPage() {
           if (a.is_correct) bySession[a.session_id].correct++
         }
       }
-      sessionStats = (sessions ?? []).slice().reverse().map(s => {
+      sessionStats = (sessions ?? []).map(s => {
         const stat = bySession[s.id]
         return stat && stat.answered > 0 ? { percentCorrect: (stat.correct / stat.answered) * 100 } : { percentCorrect: 0 }
       })

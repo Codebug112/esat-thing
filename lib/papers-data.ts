@@ -273,30 +273,12 @@ export function getPaperAnswerOptions(paper: Paper): string[] {
 
 export function predictESATScore(sessions: { percentCorrect: number }[]): number | null {
   if (sessions.length === 0) return null
-  const n = sessions.length
-  let weightedSum = 0
-  let totalWeight = 0
-  sessions.forEach((s, i) => {
-    const weight = i + 1
-    weightedSum += s.percentCorrect * weight
-    totalWeight += weight
-  })
-  const pct = weightedSum / totalWeight
-  if (pct >= 95) return 9.0
-  if (pct >= 90) return 8.5
-  if (pct >= 85) return 8.0
-  if (pct >= 80) return 7.5
-  if (pct >= 75) return 7.0
-  if (pct >= 70) return 6.5
-  if (pct >= 65) return 6.0
-  if (pct >= 60) return 5.5
-  if (pct >= 55) return 5.0
-  if (pct >= 50) return 4.5
-  if (pct >= 45) return 4.0
-  if (pct >= 40) return 3.5
-  if (pct >= 35) return 3.0
-  if (pct >= 25) return 2.0
-  return 1.0
+  // Use last 5 sessions, simple average
+  const last5 = sessions.slice(-5)
+  const pct = last5.reduce((sum, s) => sum + s.percentCorrect, 0) / last5.length
+  // Formula: (percentage / 10) - 1, clamped to 1–9
+  const raw = pct / 10 - 1
+  return Math.min(9, Math.max(1, Math.round(raw * 10) / 10))
 }
 
 export const WRONG_REASONS = [
