@@ -29,12 +29,7 @@ export default async function SessionPage({
   const paper = getPaperById(session.paper_id)
   if (!paper) redirect('/papers')
 
-  // URL param takes precedence; fall back to what was saved when the session started
-  const selectedParts = parts
-    ? parts.split(',')
-    : session.selected_parts
-    ? session.selected_parts.split(',')
-    : undefined
+  const selectedParts = parts ? parts.split(',') : undefined
 
   const { data: flaggedRows } = await supabase
     .from('flagged_questions')

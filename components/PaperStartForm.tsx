@@ -66,7 +66,6 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
           paper_name: paper.name,
           goal_time_sec: goalSec,
           status: 'in_progress',
-          selected_parts: (paper.parts && availableParts.length > 0) ? selectedParts.join(',') : null,
         })
         .select('id')
         .single()
