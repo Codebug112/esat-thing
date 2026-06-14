@@ -207,13 +207,33 @@ function engaaParts(year: number, count: number): Record<number, string> {
   return parts
 }
 
-// PDF URLs — fill in the correct links for each paper
-// (Cambridge Assessment Admissions Testing past papers)
+// PDF URLs from Physics & Maths Tutor
 const NSAA_PDF_URLS: Record<number, string> = {
-  // e.g. 2023: 'https://www.admissionstesting.org/Images/...',
+  2016: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202016%20Section%201.pdf',
+  2017: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202017%20Section%201.pdf',
+  2018: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202018%20Section%201.pdf',
+  2019: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202019%20Section%201.pdf',
+  2020: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202020%20Section%201.pdf',
+  2021: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202021%20Section%201.pdf',
+  2022: 'https://pmt.physicsandmathstutor.com/download/Admissions/NSAA/Papers/NSAA%202022%20Section%201.pdf',
 }
-const ENGAA_PDF_URLS: Record<number, string> = {}
-const TMUA_PDF_URLS: Record<number, string> = {}
+const ENGAA_PDF_URLS: Record<number, string> = {
+  2016: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202016%20Section%201.pdf',
+  2017: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202017%20Section%201.pdf',
+  2018: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202018%20Section%201.pdf',
+  2019: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202019%20Section%201.pdf',
+  2020: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202020%20Section%201.pdf',
+  2021: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202021%20Section%201.pdf',
+  2022: 'https://pmt.physicsandmathstutor.com/download/Admissions/ENGAA/Papers/ENGAA%202022%20Section%201.pdf',
+}
+const TMUA_PDF_URLS: Record<number, string> = {
+  2017: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202017%20Paper%201.pdf',
+  2018: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202018%20Paper%201.pdf',
+  2019: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202019%20Paper%201.pdf',
+  2020: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202020%20Paper%201.pdf',
+  2021: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202021%20Paper%201.pdf',
+  2022: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202022%20Paper%201.pdf',
+}
 
 export const PAPERS: Paper[] = [
   { id: 'nsaa-2016', type: 'NSAA', year: 2016, section: 'Section 1', questionCount: 90, name: 'NSAA 2016 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2016_S1, parts: nsaaParts(2016), pdfUrl: NSAA_PDF_URLS[2016] },
