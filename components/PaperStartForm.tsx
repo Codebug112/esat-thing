@@ -49,30 +49,43 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
 
   async function startSession() {
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const supabase = createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        alert('You need to be logged in. Please refresh and try again.')
+        setLoading(false)
+        return
+      }
 
-    const { data: session, error } = await supabase
-      .from('sessions')
-      .insert({
-        user_id: user.id,
-        paper_id: paper.id,
-        paper_name: paper.name,
-        goal_time_sec: goalSec,
-        status: 'in_progress',
-        selected_parts: (paper.parts && availableParts.length > 0) ? selectedParts.join(',') : null,
-      })
-      .select('id')
-      .single()
+      const { data: session, error } = await supabase
+        .from('sessions')
+        .insert({
+          user_id: user.id,
+          paper_id: paper.id,
+          paper_name: paper.name,
+          goal_time_sec: goalSec,
+          status: 'in_progress',
+          selected_parts: (paper.parts && availableParts.length > 0) ? selectedParts.join(',') : null,
+        })
+        .select('id')
+        .single()
 
-    if (error || !session) { setLoading(false); return }
+      if (error || !session) {
+        alert(`Failed to start session: ${error?.message ?? 'unknown error'}`)
+        setLoading(false)
+        return
+      }
 
-    let url = `/session/${session.id}`
-    if (paper.parts && availableParts.length > 0) {
-      url += `?parts=${selectedParts.map(encodeURIComponent).join(',')}`
+      let url = `/session/${session.id}`
+      if (paper.parts && availableParts.length > 0) {
+        url += `?parts=${selectedParts.map(encodeURIComponent).join(',')}`
+      }
+      router.push(url)
+    } catch (e) {
+      alert(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`)
+      setLoading(false)
     }
-    router.push(url)
   }
 
   return (
