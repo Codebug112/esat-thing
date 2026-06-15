@@ -268,10 +268,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
       }
     })
 
-    const { error: insertError } = await supabase.from('session_answers').upsert(
-      answersToInsert,
-      { onConflict: 'session_id,question_number' }
-    )
+    const { error: insertError } = await supabase.from('session_answers').insert(answersToInsert)
     if (insertError) {
       alert(`Failed to save answers: ${insertError.message}`)
       setSubmitting(false)
