@@ -268,8 +268,24 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
       }
     })
 
-    await supabase.from('session_answers').insert(answersToInsert)
-    await supabase.from('sessions').update({ status: 'completed', completed_at: new Date().toISOString(), draft_state: null }).eq('id', sessionId)
+    const { error: insertError } = await supabase.from('session_answers').upsert(
+      answersToInsert,
+      { onConflict: 'session_id,question_number' }
+    )
+    if (insertError) {
+      alert(`Failed to save answers: ${insertError.message}`)
+      setSubmitting(false)
+      return
+    }
+    const { error: updateError } = await supabase
+      .from('sessions')
+      .update({ status: 'completed', completed_at: new Date().toISOString(), draft_state: null })
+      .eq('id', sessionId)
+    if (updateError) {
+      alert(`Failed to complete session: ${updateError.message}`)
+      setSubmitting(false)
+      return
+    }
     router.push(`/results/${sessionId}`)
   }
 
