@@ -29,7 +29,11 @@ export default async function SessionPage({
   const paper = getPaperById(session.paper_id)
   if (!paper) redirect('/papers')
 
-  const selectedParts = parts ? parts.split(',') : undefined
+  // Read selectedParts from URL param, or fall back to what was saved in draft_state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const draft = session.draft_state as any
+  const savedParts = draft?.__parts__ ?? null
+  const selectedParts = parts ? parts.split(',') : savedParts ?? undefined
 
   const { data: flaggedRows } = await supabase
     .from('flagged_questions')
@@ -45,7 +49,7 @@ export default async function SessionPage({
       paper={paper}
       goalTimeSec={session.goal_time_sec}
       selectedParts={selectedParts}
-      draftState={session.draft_state ?? null}
+      draftState={draft}
       existingFlags={existingFlags}
     />
   )

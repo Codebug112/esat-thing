@@ -6,12 +6,17 @@ import { Paper, getPaperAnswerOptions } from '@/lib/papers-data'
 import { createClient } from '@/lib/supabase/client'
 import { IconFlag, IconArrowLeft, IconArrowRight } from './Icons'
 
+interface DraftState {
+  __parts__?: string[] | null
+  [key: number]: QuestionState
+}
+
 interface Props {
   sessionId: string
   paper: Paper
   goalTimeSec: number
   selectedParts?: string[]
-  draftState: Record<number, QuestionState> | null
+  draftState: DraftState | null
   existingFlags: Set<number>
 }
 
@@ -70,9 +75,10 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(async () => {
       const supabase = createClient()
+      const draft: DraftState = { ...questionsRef.current, __parts__: selectedParts ?? null }
       await supabase
         .from('sessions')
-        .update({ draft_state: questionsRef.current })
+        .update({ draft_state: draft })
         .eq('id', sessionId)
     }, 2000)
   }
@@ -234,12 +240,19 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
 
   async function saveAndExit() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    stopCurrentTimer()
-    await new Promise(r => setTimeout(r, 50))
+    // Compute stopped state directly — don't rely on async ref update
+    const currentState = questionsRef.current
+    const runningQ = currentQRef.current
+    const q = currentState[runningQ]
+    const finalState: DraftState = q?.running && q.startedAt
+      ? { ...currentState, [runningQ]: { ...q, running: false, startedAt: null, timeTakenMs: q.timeTakenMs + (Date.now() - q.startedAt) } }
+      : { ...currentState }
+    // Embed selectedParts so they're restored on resume
+    finalState.__parts__ = selectedParts ?? null
     const supabase = createClient()
     await supabase
       .from('sessions')
-      .update({ draft_state: questionsRef.current })
+      .update({ draft_state: finalState })
       .eq('id', sessionId)
     router.push('/papers')
   }
