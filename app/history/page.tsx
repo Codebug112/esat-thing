@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { WRONG_REASONS } from '@/lib/papers-data'
 import Nav from '@/components/Nav'
 import { IconChevronRight } from '@/components/Icons'
+import DiscardSessionButton from '@/components/DiscardSessionButton'
 
 export default async function HistoryPage() {
   const supabase = await createClient()
@@ -17,7 +18,9 @@ export default async function HistoryPage() {
     .order('completed_at', { ascending: false, nullsFirst: false })
 
   const completedSessions = (sessions ?? []).filter(s => s.status === 'completed')
-  const inProgressSessions = (sessions ?? []).filter(s => s.status === 'in_progress')
+  const inProgressSessions = (sessions ?? [])
+    .filter(s => s.status === 'in_progress')
+    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
 
   const sessionIds = completedSessions.map(s => s.id)
 
@@ -143,7 +146,10 @@ export default async function HistoryPage() {
                       </p>
                     </div>
                   </div>
-                  <IconChevronRight size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <DiscardSessionButton sessionId={s.id} />
+                    <IconChevronRight size={14} style={{ color: 'var(--muted)' }} />
+                  </div>
                 </Link>
               ))}
             </div>
