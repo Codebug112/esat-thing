@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function DiscardSessionButton({ sessionId }: { sessionId: string }) {
+export default function DiscardSessionButton({ sessionId, label = 'Discard' }: { sessionId: string; label?: string }) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -19,7 +19,7 @@ export default function DiscardSessionButton({ sessionId }: { sessionId: string 
   if (confirming) {
     return (
       <div className="flex items-center gap-2" onClick={e => e.preventDefault()}>
-        <span className="text-xs" style={{ color: 'var(--muted)' }}>Discard?</span>
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>{label}?</span>
         <button
           onClick={discard}
           disabled={loading}
@@ -45,7 +45,7 @@ export default function DiscardSessionButton({ sessionId }: { sessionId: string 
       className="px-2.5 py-1 rounded-lg text-xs font-semibold flex-shrink-0"
       style={{ background: 'var(--red-bg)', color: 'var(--red-text)' }}
     >
-      Discard
+      {label}
     </button>
   )
 }

@@ -190,7 +190,10 @@ export default async function HistoryPage() {
                         </p>
                       </div>
                     </div>
-                    <IconChevronRight size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <DiscardSessionButton sessionId={s.id} label="Delete" />
+                      <IconChevronRight size={14} style={{ color: 'var(--muted)' }} />
+                    </div>
                   </Link>
                 )
               })}
