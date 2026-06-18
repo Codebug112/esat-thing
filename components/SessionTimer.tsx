@@ -250,10 +250,14 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     // Embed selectedParts so they're restored on resume
     finalState.__parts__ = selectedParts ?? null
     const supabase = createClient()
-    await supabase
+    const { error } = await supabase
       .from('sessions')
       .update({ draft_state: finalState })
       .eq('id', sessionId)
+    if (error) {
+      alert(`Failed to save: ${error.message}`)
+      return
+    }
     router.push('/papers')
   }
 
