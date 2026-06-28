@@ -64,12 +64,15 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
   const [tick, setTick] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+  const [autoStart, setAutoStart] = useState(false)
+  const autoStartRef = useRef(autoStart)
   const questionsRef = useRef(questions)
   const currentQRef = useRef(currentQ)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { questionsRef.current = questions }, [questions])
   useEffect(() => { currentQRef.current = currentQ }, [currentQ])
+  useEffect(() => { autoStartRef.current = autoStart }, [autoStart])
 
   function scheduleSave() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -181,10 +184,6 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
   }
 
   function goToQuestion(n: number) {
-    const fromPart = paper.parts?.[currentQRef.current]
-    const toPart = paper.parts?.[n]
-    const crossingSection = paper.parts !== undefined && fromPart !== toPart
-
     setQuestions(prev => {
       let updated = { ...prev }
       // Stop current question timer
@@ -193,8 +192,8 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
         const elapsed = cq.timeTakenMs + (Date.now() - cq.startedAt)
         updated = { ...updated, [currentQRef.current]: { ...cq, running: false, startedAt: null, timeTakenMs: elapsed } }
       }
-      // Auto-start timer for new question when crossing into a different section
-      if (crossingSection) {
+      // Auto-start timer for new question if autoStart is on
+      if (autoStartRef.current) {
         const nq = updated[n]
         if (nq && !nq.running) {
           updated = { ...updated, [n]: { ...nq, running: true, startedAt: Date.now(), started: true } }
@@ -205,6 +204,17 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     setCurrentQ(n)
     scheduleSave()
   }
+
+  // Auto-start first question on mount if autoStart toggled on
+  useEffect(() => {
+    if (!autoStart) return
+    setQuestions(prev => {
+      const q = prev[activeQuestions[0]]
+      if (!q || q.running) return prev
+      return { ...prev, [activeQuestions[0]]: { ...q, running: true, startedAt: Date.now(), started: true } }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart])
 
   function setAnswer(qNum: number, ans: string) {
     setQuestions(prev => ({ ...prev, [qNum]: { ...prev[qNum], answer: ans } }))
@@ -379,6 +389,22 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
             <p className="text-xs" style={{ color: 'var(--muted)' }}>total</p>
             <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text)' }}>{formatMs(totalElapsedMs)}</p>
           </div>
+          {/* Auto-start toggle */}
+          <button
+            onClick={() => setAutoStart(v => !v)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+            style={{
+              background: autoStart ? 'var(--purple-light)' : 'var(--bg)',
+              color: autoStart ? 'var(--purple)' : 'var(--muted)',
+              border: `1.5px solid ${autoStart ? 'var(--purple-mid)' : 'var(--border)'}`,
+            }}
+          >
+            <span
+              className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+              style={{ background: autoStart ? 'var(--purple)' : 'var(--border)' }}
+            />
+            Auto
+          </button>
           <button
             onClick={saveAndExit}
             className="px-4 py-2 rounded-xl text-xs font-semibold"
@@ -413,7 +439,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
           </div>
           <p className="text-sm mt-5 font-medium" style={{ color: timerColor, opacity: 0.8 }}>
             {!currentState?.started
-              ? 'tap anywhere or press space to start'
+              ? autoStart ? 'auto-start on — navigating will start timer' : 'tap anywhere or press space to start'
               : currentState.running
               ? 'running — tap or space to stop'
               : 'stopped — tap or space to resume'}
