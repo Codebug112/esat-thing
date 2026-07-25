@@ -64,7 +64,7 @@ export default async function PapersPage() {
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>Papers</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-            {totalMcq} auto-marked MCQ papers · {totalTimed} timed practice papers (self-marked)
+            {totalMcq} auto-marked MCQ papers · {totalTimed} timed practice papers with mark schemes
           </p>
         </div>
 

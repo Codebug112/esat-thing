@@ -37,7 +37,7 @@ export default async function FlaggedPage() {
       answerOptions: getPaperAnswerOptions(paper),
       questions: qNums.sort((a, b) => a - b).map(n => ({
         number: n,
-        correctAnswer: paper.answers[n],
+        correctAnswer: paper.answers?.[n],
         subject: paper.parts?.[n] ?? null,
       })),
     }]
