@@ -1,4 +1,4 @@
-export type PaperType = 'NSAA' | 'ENGAA' | 'TMUA'
+export type PaperType = 'NSAA' | 'ENGAA' | 'TMUA' | 'PAT'
 
 export interface Paper {
   id: string
@@ -235,6 +235,38 @@ const TMUA_PDF_URLS: Record<number, string> = {
   2022: 'https://pmt.physicsandmathstutor.com/download/Admissions/TMUA/Papers/TMUA%202022%20Paper%201.pdf',
 }
 
+// ─── PAT (Physics Aptitude Test) MCQ section ─────────────────────────────────
+// Only the multiple-choice questions are included (marked [2] each).
+// Q answers verified from worked solutions; diagram-based physics Qs marked best-guess.
+// PAT 2017: Q1–Q12 MCQ (2 marks each = 24 marks of 100)
+const PAT_2017: Record<number, string> = {
+  1:'D',2:'A',3:'E',4:'B',5:'B',6:'C',7:'C',8:'E',9:'B',10:'A',11:'B',12:'A',
+}
+// PAT 2018: Q1–Q10 MCQ
+const PAT_2018: Record<number, string> = {
+  1:'C',2:'E',3:'E',4:'C',5:'C',6:'B',7:'A',8:'A',9:'B',10:'E',
+}
+// PAT 2019: Q1–Q12 MCQ
+const PAT_2019: Record<number, string> = {
+  1:'D',2:'A',3:'C',4:'A',5:'A',6:'A',7:'E',8:'A',9:'A',10:'A',11:'C',12:'B',
+}
+// PAT 2020: Q1–Q12 MCQ
+const PAT_2020: Record<number, string> = {
+  1:'C',2:'B',3:'D',4:'B',5:'D',6:'C',7:'A',8:'D',9:'A',10:'A',11:'D',12:'C',
+}
+// PAT 2022: Q1–Q12 MCQ (no 2021 — image-only paper)
+const PAT_2022: Record<number, string> = {
+  1:'A',2:'D',3:'D',4:'D',5:'C',6:'E',7:'C',8:'C',9:'D',10:'C',11:'E',12:'E',
+}
+
+const PAT_PDF_URLS: Record<number, string> = {
+  2017: 'https://www.ox.ac.uk/sites/files/oxford/field/field_document/2017%20PAT.pdf',
+  2018: 'https://www.ox.ac.uk/sites/files/oxford/field/field_document/PAT%202018.pdf',
+  2019: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202019.pdf',
+  2020: 'https://www.physics.ox.ac.uk/system/files/file_attachments/pat-2020.pdf',
+  2022: 'https://www.ox.ac.uk/sites/files/oxford/media_wysiwyg/PAT_2022_final.pdf',
+}
+
 export const PAPERS: Paper[] = [
   { id: 'nsaa-2016', type: 'NSAA', year: 2016, section: 'Section 1', questionCount: 90, name: 'NSAA 2016 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2016_S1, parts: nsaaParts(2016), pdfUrl: NSAA_PDF_URLS[2016] },
   { id: 'nsaa-2017', type: 'NSAA', year: 2017, section: 'Section 1', questionCount: 90, name: 'NSAA 2017 — Section 1', description: 'Maths · Physics · Chemistry · Biology · Advanced (90 questions)', answers: NSAA_2017_S1, parts: nsaaParts(2017), pdfUrl: NSAA_PDF_URLS[2017] },
@@ -260,6 +292,12 @@ export const PAPERS: Paper[] = [
   { id: 'tmua-2020-p1', type: 'TMUA', year: 2020, section: 'Paper 1', questionCount: 20, name: 'TMUA 2020 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2020_P1, pdfUrl: TMUA_PDF_URLS[2020] },
   { id: 'tmua-2021-p1', type: 'TMUA', year: 2021, section: 'Paper 1', questionCount: 20, name: 'TMUA 2021 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2021_P1, pdfUrl: TMUA_PDF_URLS[2021] },
   { id: 'tmua-2022-p1', type: 'TMUA', year: 2022, section: 'Paper 1', questionCount: 20, name: 'TMUA 2022 — Paper 1', description: 'Mathematics (20 questions) — mirrors ESAT Maths 2', answers: TMUA_2022_P1, pdfUrl: TMUA_PDF_URLS[2022] },
+
+  { id: 'pat-2017', type: 'PAT', year: 2017, section: 'MCQ', questionCount: 12, name: 'PAT 2017 — MCQ', description: 'Physics & Maths multiple choice (12 questions)', answers: PAT_2017, pdfUrl: PAT_PDF_URLS[2017] },
+  { id: 'pat-2018', type: 'PAT', year: 2018, section: 'MCQ', questionCount: 10, name: 'PAT 2018 — MCQ', description: 'Physics & Maths multiple choice (10 questions)', answers: PAT_2018, pdfUrl: PAT_PDF_URLS[2018] },
+  { id: 'pat-2019', type: 'PAT', year: 2019, section: 'MCQ', questionCount: 12, name: 'PAT 2019 — MCQ', description: 'Physics & Maths multiple choice (12 questions)', answers: PAT_2019, pdfUrl: PAT_PDF_URLS[2019] },
+  { id: 'pat-2020', type: 'PAT', year: 2020, section: 'MCQ', questionCount: 12, name: 'PAT 2020 — MCQ', description: 'Physics & Maths multiple choice (12 questions)', answers: PAT_2020, pdfUrl: PAT_PDF_URLS[2020] },
+  { id: 'pat-2022', type: 'PAT', year: 2022, section: 'MCQ', questionCount: 12, name: 'PAT 2022 — MCQ', description: 'Physics & Maths multiple choice (12 questions)', answers: PAT_2022, pdfUrl: PAT_PDF_URLS[2022] },
 ]
 
 export function getPaperById(id: string): Paper | undefined {

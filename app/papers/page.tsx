@@ -21,12 +21,13 @@ export default async function PapersPage() {
     if (!completedMap[s.paper_id]) completedMap[s.paper_id] = s.completed_at
   }
 
-  const types: PaperType[] = ['NSAA', 'ENGAA', 'TMUA']
+  const types: PaperType[] = ['NSAA', 'ENGAA', 'TMUA', 'PAT']
 
   const typeConfig: Record<PaperType, { bg: string; text: string; dot: string; desc: string }> = {
     NSAA: { bg: 'var(--green-bg)', text: 'var(--green-text)', dot: '#16a34a', desc: 'Natural Sciences — Maths · Physics · Chemistry · Biology' },
     ENGAA: { bg: 'var(--blue-bg)', text: 'var(--blue-text)', dot: '#2563eb', desc: 'Engineering — Maths & Physics' },
     TMUA: { bg: 'var(--orange-bg)', text: 'var(--orange-text)', dot: '#ea580c', desc: 'Test of Mathematics — Paper 1 only (mirrors ESAT Maths 2)' },
+    PAT: { bg: 'var(--purple-light)', text: 'var(--purple-dark)', dot: 'var(--purple)', desc: 'Oxford Physics Aptitude Test — MCQ section only (mixed Maths & Physics)' },
   }
 
   return (
@@ -37,7 +38,7 @@ export default async function PapersPage() {
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>Papers</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-            22 past papers with official answer keys from Cambridge / UAT UK mark schemes.
+            27 past papers — NSAA, ENGAA, TMUA, and PAT (MCQ section).
           </p>
         </div>
 
