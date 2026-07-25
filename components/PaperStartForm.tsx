@@ -76,8 +76,10 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
         return
       }
 
-      let url = `/session/${session.id}`
-      if (paper.parts && availableParts.length > 0) {
+      let url = paper.mode === 'timed'
+        ? `/timed-session/${session.id}`
+        : `/session/${session.id}`
+      if (paper.mode === 'mcq' && paper.parts && availableParts.length > 0) {
         url += `?parts=${selectedParts.map(encodeURIComponent).join(',')}`
       }
       router.push(url)
@@ -99,7 +101,7 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{paper.name}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-              {paper.questionCount} questions
+              {paper.mode === 'mcq' ? `${paper.questionCount} questions` : paper.totalMarks ? `${paper.totalMarks} marks · self-marked` : 'Timed · self-marked'}
               {doneDate && <span className="ml-2" style={{ color: '#16a34a' }}>· done {new Date(doneDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
             </p>
           </div>
@@ -128,7 +130,7 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
             <div className="flex items-start justify-between px-6 py-5 border-b" style={{ borderColor: 'var(--border)' }}>
               <div>
                 <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>{paper.name}</h2>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{paper.questionCount} questions · {paper.description}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{paper.mode === 'mcq' ? `${paper.questionCount} questions · ` : ''}{paper.description}</p>
                 {paper.pdfUrl && (
                   <a
                     href={paper.pdfUrl}
@@ -228,8 +230,8 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
                 </div>
               </div>
 
-              {/* Goal time */}
-              <div className="rounded-xl p-4" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              {/* Goal time — MCQ only */}
+              {paper.mode === 'mcq' && <div className="rounded-xl p-4" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-1.5">
                     <IconClock size={14} style={{ color: 'var(--muted)' }} />
@@ -253,7 +255,7 @@ export default function PaperStartForm({ paper, doneDate, isLast, typeDot }: Pro
                   <span>50s</span>
                   <span>100s</span>
                 </div>
-              </div>
+              </div>}
 
               {/* Tip */}
               <div className="flex gap-2.5 px-4 py-3 rounded-xl" style={{ background: 'var(--purple-light)' }}>
