@@ -281,7 +281,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
     const supabase = createClient()
     const answersToInsert = activeQuestions.map(qn => {
       const state = qs[qn]
-      const correctAnswer = paper.answers[qn]
+      const correctAnswer = paper.answers?.[qn]
       const hasAnswer = state.answer !== null && state.answer !== ''
       return {
         session_id: sessionId,
@@ -315,7 +315,7 @@ export default function SessionTimer({ sessionId, paper, goalTimeSec, selectedPa
 
   // Only show answer options that appear in the active questions
   const answerOptions = (() => {
-    const used = new Set(activeQuestions.map(n => paper.answers[n]).filter(Boolean))
+    const used = new Set(activeQuestions.map(n => paper.answers?.[n]).filter(Boolean))
     return ['A','B','C','D','E','F','G','H'].filter(o => used.has(o))
   })()
   const currentState = questions[currentQ]
