@@ -10,10 +10,7 @@ const typeConfig: Record<string, { dot: string; desc: string; label: string }> =
   TMUA: { dot: '#ea580c', label: 'TMUA', desc: 'Test of Mathematics for University Admission — Paper 1 (mirrors ESAT Maths 2)' },
   'PAT-mcq': { dot: '#7c3aed', label: 'PAT — MCQ', desc: 'Oxford Physics Aptitude Test — multiple choice section (auto-marked)' },
   'PAT-timed': { dot: '#a78bfa', label: 'PAT — Full papers', desc: 'Oxford Physics Aptitude Test — full written papers (self-marked with mark scheme)' },
-  'Solomon-C': { dot: '#0891b2', label: 'Solomon — Core Maths', desc: 'Solomon Press C1–C4 practice papers (self-marked)' },
-  'Solomon-M': { dot: '#0d9488', label: 'Solomon — Mechanics', desc: 'Solomon Press M1–M2 practice papers (self-marked)' },
-  'Solomon-S': { dot: '#d97706', label: 'Solomon — Statistics', desc: 'Solomon Press S1–S2 practice papers (self-marked)' },
-  'Solomon-FP': { dot: '#dc2626', label: 'Solomon — Further Pure', desc: 'Solomon Press FP1–FP2 practice papers (self-marked)' },
+  'Solomon-C': { dot: '#0891b2', label: 'Solomon — Core Maths', desc: 'Solomon Press C1–C3 practice papers (self-marked with mark scheme)' },
 }
 
 function solomonSubgroup(section: string): string {
@@ -46,11 +43,7 @@ export default async function PapersPage() {
     { key: 'ENGAA', papers: PAPERS.filter(p => p.type === 'ENGAA').sort((a, b) => b.year - a.year) },
     { key: 'TMUA', papers: PAPERS.filter(p => p.type === 'TMUA').sort((a, b) => b.year - a.year) },
     { key: 'PAT-mcq', papers: PAPERS.filter(p => p.type === 'PAT' && p.mode === 'mcq').sort((a, b) => b.year - a.year) },
-    { key: 'PAT-timed', papers: PAPERS.filter(p => p.type === 'PAT' && p.mode === 'timed').sort((a, b) => b.year - a.year) },
-    { key: 'Solomon-C', papers: PAPERS.filter(p => p.type === 'Solomon' && /Solomon (C[1-4])/.test(p.name)) },
-    { key: 'Solomon-M', papers: PAPERS.filter(p => p.type === 'Solomon' && /Solomon (M[12])/.test(p.name)) },
-    { key: 'Solomon-S', papers: PAPERS.filter(p => p.type === 'Solomon' && /Solomon (S[12])/.test(p.name)) },
-    { key: 'Solomon-FP', papers: PAPERS.filter(p => p.type === 'Solomon' && /Solomon (FP[12])/.test(p.name)) },
+    { key: 'Solomon-C', papers: PAPERS.filter(p => p.type === 'Solomon') },
   ].filter(g => g.papers.length > 0)
 
   const totalMcq = PAPERS.filter(p => p.mode === 'mcq').length

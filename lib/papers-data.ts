@@ -293,17 +293,10 @@ const SOLOMON_PAPERS: Paper[] = [
   ...solomonPapers('C1', 'C1', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
   ...solomonPapers('C2', 'C2', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
   ...solomonPapers('C3', 'C3', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
-  ...solomonPapers('C4', 'C4', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
-  ...solomonPapers('M1', 'M1', ['A','B','C','D','E','F','G','H'], 75),
-  ...solomonPapers('M2', 'M2', ['A','B','C','D','E','F','G','H'], 75),
-  ...solomonPapers('S1', 'S1', ['A','B','C','D','E','F','G','H'], 75),
-  ...solomonPapers('S2', 'S2', ['A','B','C','D','E','F','G','H'], 75),
-  ...solomonPapers('FP1', 'FP1', ['A','B','C','D','E','F','G','H'], 75),
-  ...solomonPapers('FP2', 'FP2', ['A','B','C','D','E','F','G','H'], 75),
 ]
 
 // ─── PAT Timed (written-answer papers) ────────────────────────────────────────
-const PAT_TIMED_YEARS = [2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2021,2023]
+const PAT_TIMED_YEARS: number[] = []
 const PAT_TIMED_PAPERS: Paper[] = PAT_TIMED_YEARS.map(year => ({
   id: `pat-${year}-timed`,
   type: 'PAT' as PaperType,
