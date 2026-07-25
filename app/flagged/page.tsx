@@ -8,7 +8,7 @@ export interface FlaggedPaper {
   paperId: string
   paperName: string
   answerOptions: string[]
-  questions: { number: number; correctAnswer: string; subject: string | null }[]
+  questions: { number: number; correctAnswer: string | undefined; subject: string | null }[]
 }
 
 export default async function FlaggedPage() {

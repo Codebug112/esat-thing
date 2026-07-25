@@ -29,7 +29,7 @@ export default function FlaggedClient({ papers: initialPapers, userId }: Props) 
   const [papers, setPapers] = useState(initialPapers)
 
   // Practice state
-  const [practiceQueue, setPracticeQueue] = useState<{ paperId: string; paperName: string; number: number; correctAnswer: string; subject: string | null; answerOptions: string[] }[]>([])
+  const [practiceQueue, setPracticeQueue] = useState<{ paperId: string; paperName: string; number: number; correctAnswer: string | undefined; subject: string | null; answerOptions: string[] }[]>([])
   const [practiceIndex, setPracticeIndex] = useState(0)
   const [chosenAnswer, setChosenAnswer] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
