@@ -263,11 +263,12 @@ const PAT_2022: Record<number, string> = {
 }
 
 const PAT_PDF_URLS: Record<number, string> = {
-  2017: 'https://www.ox.ac.uk/sites/files/oxford/field/field_document/2017%20PAT.pdf',
-  2018: 'https://www.ox.ac.uk/sites/files/oxford/field/field_document/PAT%202018.pdf',
+  2017: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202017.pdf',
+  2018: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202018.pdf',
   2019: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202019.pdf',
-  2020: 'https://www.physics.ox.ac.uk/system/files/file_attachments/pat-2020.pdf',
-  2022: 'https://www.ox.ac.uk/sites/files/oxford/media_wysiwyg/PAT_2022_final.pdf',
+  2020: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202020.pdf',
+  2021: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202021.pdf',
+  2022: 'https://pmt.physicsandmathstutor.com/download/Admissions/PAT/Papers/PAT%202022.pdf',
 }
 
 // ─── Solomon Press helper ─────────────────────────────────────────────────────
