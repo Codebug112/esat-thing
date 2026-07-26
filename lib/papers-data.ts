@@ -355,7 +355,10 @@ export function getPaperById(id: string): Paper | undefined {
 export function getPaperAnswerOptions(paper: Paper): string[] {
   if (!paper.answers) return ['A','B','C','D','E']
   const used = new Set(Object.values(paper.answers))
-  return ['A','B','C','D','E','F','G','H'].filter(o => used.has(o))
+  // Always include A–E as minimum; add F–H only if they appear
+  const base = ['A','B','C','D','E']
+  const extra = ['F','G','H'].filter(o => used.has(o))
+  return [...base, ...extra]
 }
 
 export function predictESATScore(sessions: { percentCorrect: number }[]): number | null {
