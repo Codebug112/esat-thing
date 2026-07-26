@@ -13,7 +13,7 @@ export default async function HistoryPage() {
 
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, paper_name, completed_at, started_at, goal_time_sec, status')
+    .select('id, paper_id, paper_name, completed_at, started_at, goal_time_sec, status, manual_score, total_time_ms')
     .eq('user_id', user.id)
     .order('completed_at', { ascending: false, nullsFirst: false })
 
@@ -162,11 +162,24 @@ export default async function HistoryPage() {
             <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Completed</h2>
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               {completedSessions.map((s, i) => {
+                const isTimed = !sessionStats[s.id] && (s.manual_score !== null || s.total_time_ms !== null)
                 const stats = sessionStats[s.id] ?? { correct: 0, total: 0, answered: 0, totalMs: 0 }
-                const pct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
-                const avgMs = stats.total > 0 ? stats.totalMs / stats.total : 0
-                const scoreColor = pct >= 70 ? 'var(--green-text)' : pct >= 50 ? 'var(--yellow-text)' : 'var(--red-text)'
-                const scoreBg = pct >= 70 ? 'var(--green-bg)' : pct >= 50 ? 'var(--yellow-bg)' : 'var(--red-bg)'
+                const totalMs = isTimed ? (s.total_time_ms ?? 0) : stats.totalMs
+
+                // For timed: show score out of total marks
+                let scoreLabel: string
+                let scorePct: number
+                if (isTimed) {
+                  scoreLabel = s.manual_score !== null ? `${s.manual_score} pts` : '—'
+                  scorePct = -1 // neutral
+                } else {
+                  scorePct = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0
+                  scoreLabel = `${scorePct}%`
+                }
+
+                const avgMs = !isTimed && stats.total > 0 ? stats.totalMs / stats.total : 0
+                const scoreColor = isTimed ? 'var(--purple)' : scorePct >= 70 ? 'var(--green-text)' : scorePct >= 50 ? 'var(--yellow-text)' : 'var(--red-text)'
+                const scoreBg = isTimed ? 'var(--purple-light)' : scorePct >= 70 ? 'var(--green-bg)' : scorePct >= 50 ? 'var(--yellow-bg)' : 'var(--red-bg)'
                 return (
                   <Link
                     key={s.id}
@@ -176,17 +189,20 @@ export default async function HistoryPage() {
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-center min-w-[4rem]" style={{ background: scoreBg }}>
-                        <p className="text-sm font-bold" style={{ color: scoreColor }}>{pct}%</p>
-                        <p className="text-xs font-medium" style={{ color: scoreColor }}>{stats.correct}/{stats.answered}</p>
+                        <p className="text-sm font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
+                        {!isTimed && <p className="text-xs font-medium" style={{ color: scoreColor }}>{stats.correct}/{stats.answered}</p>}
+                        {isTimed && <p className="text-xs font-medium" style={{ color: scoreColor }}>timed</p>}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{s.paper_name}</p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                           {new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           <span className="mx-1.5">·</span>
-                          <span className="font-mono">{formatMs(stats.totalMs)}</span> total
-                          <span className="mx-1.5">·</span>
-                          <span className="font-mono" style={{ color: avgMs > s.goal_time_sec * 1000 ? 'var(--red-text)' : 'inherit' }}>{formatMs(avgMs)}</span>/q
+                          <span className="font-mono">{formatMs(totalMs)}</span> total
+                          {!isTimed && <>
+                            <span className="mx-1.5">·</span>
+                            <span className="font-mono" style={{ color: avgMs > s.goal_time_sec * 1000 ? 'var(--red-text)' : 'inherit' }}>{formatMs(avgMs)}</span>/q
+                          </>}
                         </p>
                       </div>
                     </div>
