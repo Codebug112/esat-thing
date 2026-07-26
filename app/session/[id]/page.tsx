@@ -28,6 +28,7 @@ export default async function SessionPage({
 
   const paper = getPaperById(session.paper_id)
   if (!paper) redirect('/papers')
+  if (paper.mode === 'timed') redirect(`/timed-session/${id}`)
 
   // Read selectedParts from URL param, or fall back to what was saved in draft_state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
