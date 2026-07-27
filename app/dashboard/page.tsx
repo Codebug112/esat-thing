@@ -13,7 +13,7 @@ export default async function DashboardPage() {
 
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, paper_name, completed_at')
+    .select('id, paper_id, paper_name, completed_at, manual_score')
     .eq('user_id', user.id)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false })
@@ -28,20 +28,28 @@ export default async function DashboardPage() {
       .select('session_id, is_correct, user_answer')
       .in('session_id', sessionIds)
 
-    if (answers) {
-      const bySession: Record<string, { correct: number; answered: number }> = {}
-      for (const a of answers) {
-        if (!bySession[a.session_id]) bySession[a.session_id] = { correct: 0, answered: 0 }
-        if (a.user_answer !== null && a.user_answer !== '') {
-          bySession[a.session_id].answered++
-          if (a.is_correct) bySession[a.session_id].correct++
-        }
+    const bySession: Record<string, { correct: number; answered: number }> = {}
+    for (const a of answers ?? []) {
+      if (!bySession[a.session_id]) bySession[a.session_id] = { correct: 0, answered: 0 }
+      if (a.user_answer !== null && a.user_answer !== '') {
+        bySession[a.session_id].answered++
+        if (a.is_correct) bySession[a.session_id].correct++
       }
-      sessionStats = (sessions ?? []).map(s => {
-        const stat = bySession[s.id]
-        return stat && stat.answered > 0 ? { percentCorrect: (stat.correct / stat.answered) * 100 } : { percentCorrect: 0 }
-      })
     }
+
+    sessionStats = (sessions ?? []).flatMap(s => {
+      // Timed paper with manual score — use score directly as percentage
+      if (s.manual_score !== null && s.manual_score !== undefined) {
+        return [{ percentCorrect: s.manual_score }]
+      }
+      // MCQ paper — compute from answers
+      const stat = bySession[s.id]
+      if (stat && stat.answered > 0) {
+        return [{ percentCorrect: (stat.correct / stat.answered) * 100 }]
+      }
+      // No data — exclude from prediction
+      return []
+    })
   }
 
   const predictedScore = predictESATScore(sessionStats)
