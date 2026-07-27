@@ -10,7 +10,7 @@ const typeConfig: Record<string, { dot: string; desc: string; label: string }> =
   TMUA: { dot: '#ea580c', label: 'TMUA', desc: 'Test of Mathematics for University Admission — Paper 1 (mirrors ESAT Maths 2)' },
   'PAT-mcq': { dot: '#7c3aed', label: 'PAT — MCQ', desc: 'Oxford Physics Aptitude Test — multiple choice section (auto-marked)' },
   'PAT-timed': { dot: '#a78bfa', label: 'PAT — Full papers', desc: 'Oxford Physics Aptitude Test — full written papers (self-marked with mark scheme)' },
-  'Solomon-C': { dot: '#0891b2', label: 'Solomon — Core Maths', desc: 'Solomon Press C1–C3 practice papers (self-marked with mark scheme)' },
+  'Solomon-C': { dot: '#0891b2', label: 'Solomon — Core Maths', desc: 'Solomon Press C1–C2 practice papers (self-marked with mark scheme)' },
 }
 
 function solomonSubgroup(section: string): string {

@@ -293,7 +293,6 @@ function solomonPapers(module: string, folder: string, letters: string[], totalM
 const SOLOMON_PAPERS: Paper[] = [
   ...solomonPapers('C1', 'C1', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
   ...solomonPapers('C2', 'C2', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
-  ...solomonPapers('C3', 'C3', ['A','B','C','D','E','F','G','H','I','J','K','L'], 75),
 ]
 
 // ─── PAT Timed (written-answer papers) ────────────────────────────────────────
