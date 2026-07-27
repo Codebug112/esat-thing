@@ -255,7 +255,7 @@ const PAT_2019: Record<number, string> = {
 }
 // PAT 2020: Q1–Q12 MCQ
 const PAT_2020: Record<number, string> = {
-  1:'C',2:'B',3:'D',4:'B',5:'D',6:'C',7:'A',8:'D',9:'A',10:'A',11:'D',12:'C',
+  1:'C',2:'B',3:'D',4:'B',5:'D',6:'C',7:'A',8:'D',9:'A',10:'A',11:'D',12:'E',
 }
 // PAT 2022: Q1–Q12 MCQ (no 2021 — image-only paper)
 const PAT_2022: Record<number, string> = {
